@@ -1,0 +1,61 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check project is bootstrapped
+        id: check
+        run: |
+          if [ -f pubspec.yaml ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::pubspec.yaml missing. Run the 'Bootstrap platform folders' workflow once, then pull."
+          fi
+
+      - uses: actions/setup-java@v4
+        if: steps.check.outputs.ready == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        if: steps.check.outputs.ready == 'true'
+        with:
+          channel: stable
+          flutter-version: ${{ vars.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Dependencies
+        if: steps.check.outputs.ready == 'true'
+        run: flutter pub get
+
+      - name: Analyze
+        if: steps.check.outputs.ready == 'true'
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        if: steps.check.outputs.ready == 'true'
+        run: flutter test
+
+      - name: Build debug APK (compiles Dart + Kotlin/Gradle)
+        if: steps.check.outputs.ready == 'true'
+        run: flutter build apk --debug
+
+      - name: Upload APK
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitestamp-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14

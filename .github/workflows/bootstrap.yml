@@ -1,0 +1,57 @@
+name: Bootstrap platform folders
+
+# Run ONCE from the Actions tab (Run workflow). It generates android/ and ios/,
+# pubspec.yaml and dependencies, then commits them back to the branch.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # Optional: set repo variable FLUTTER_VERSION (Settings > Variables) to pin.
+          flutter-version: ${{ vars.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Generate scaffolding and commit
+        run: |
+          set -euo pipefail
+          if [ -f pubspec.yaml ]; then
+            echo "pubspec.yaml already exists - nothing to bootstrap."
+            exit 0
+          fi
+
+          flutter --version
+          GEN="$RUNNER_TEMP/gen"
+          flutter create --org com.grvthakur --project-name sitestamp --platforms android,ios "$GEN"
+
+          # Never overwrite files we ship (e.g. our AndroidManifest.xml)
+          rsync -a --ignore-existing "$GEN/android/" android/
+          rsync -a --ignore-existing "$GEN/ios/" ios/
+          for f in pubspec.yaml analysis_options.yaml .gitignore .metadata; do
+            if [ -e "$GEN/$f" ] && [ ! -e "$f" ]; then cp "$GEN/$f" "$f"; fi
+          done
+
+          flutter pub add camera geolocator permission_handler flutter_image_compress gal native_exif path_provider
+          pwsh -File tool/apply_platform_config.ps1
+
+          flutter analyze --no-fatal-infos || echo "::warning::analyze reported issues - see log"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: bootstrap Flutter platform folders and dependencies"
+          git push origin HEAD:${{ github.ref_name }}
