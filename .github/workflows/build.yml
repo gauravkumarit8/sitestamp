@@ -36,6 +36,10 @@ jobs:
           flutter-version: ${{ vars.FLUTTER_VERSION }}
           cache: true
 
+      - name: Platform config (idempotent safety net) + show SDK lines
+        if: steps.check.outputs.ready == 'true'
+        run: pwsh -File tool/apply_platform_config.ps1
+
       - name: Dependencies
         if: steps.check.outputs.ready == 'true'
         run: flutter pub get

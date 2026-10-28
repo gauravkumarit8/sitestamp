@@ -1,20 +1,54 @@
 # Idempotent platform tweaks that cannot be shipped as plain file overlays.
-# Works on Windows and Linux (CI) PowerShell.
+# Works on Windows PowerShell and Linux pwsh (CI).
 $ErrorActionPreference = 'Stop'
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 
-# --- Android: camera/geolocator plugins need minSdk 24 ---
+$MinSdk = 24
+$CompileSdk = 37   # permission_handler_android requires >= 37
+
+function Update-File([string]$path, [scriptblock]$transform) {
+    $full = (Resolve-Path $path).Path
+    $old = [System.IO.File]::ReadAllText($full)
+    $new = & $transform $old
+    if ($new -ne $old) {
+        [System.IO.File]::WriteAllText($full, $new, $utf8)
+        Write-Host "Updated $path"
+    } else {
+        Write-Host "No change needed in $path"
+    }
+}
+
+# --- Android Gradle: minSdk + compileSdk (Kotlin DSL and Groovy) ---
 foreach ($f in @('android/app/build.gradle.kts', 'android/app/build.gradle')) {
     if (Test-Path $f) {
-        $full = (Resolve-Path $f).Path
-        $c = [System.IO.File]::ReadAllText($full)
-        $n = $c -replace 'flutter\.minSdkVersion', '24'
-        if ($n -ne $c) {
-            [System.IO.File]::WriteAllText($full, $n, $utf8)
-            Write-Host "minSdk set to 24 in $f"
-        } else {
-            Write-Host "minSdk already customised in $f (check it is >= 24)"
+        Update-File $f {
+            param($c)
+            # minSdk
+            $c = $c -replace 'flutter\.minSdkVersion', "$MinSdk"
+            # compileSdk: from flutter.* default
+            $c = $c -replace '(compileSdk(?:Version)?)(\s*=?\s*)flutter\.compileSdkVersion', "`${1}`${2}$CompileSdk"
+            # compileSdk: from a hard-coded lower number
+            $c = [regex]::Replace($c, '(compileSdk(?:Version)?\s*=?\s*)(\d+)', {
+                param($m)
+                if ([int]$m.Groups[2].Value -lt $CompileSdk) { $m.Groups[1].Value + $CompileSdk } else { $m.Value }
+            })
+            return $c
         }
+        Write-Host '--- SDK lines now in' $f '---'
+        Select-String -Path $f -Pattern 'compileSdk|minSdk|targetSdk|applicationId' | ForEach-Object { Write-Host $_.Line.Trim() }
+    }
+}
+
+# --- gradle.properties: silence "AGP not tested with compileSdk 37" ---
+$gp = 'android/gradle.properties'
+if (Test-Path $gp) {
+    $full = (Resolve-Path $gp).Path
+    $c = [System.IO.File]::ReadAllText($full)
+    if ($c -notmatch 'suppressUnsupportedCompileSdk') {
+        if (-not $c.EndsWith("`n")) { $c += "`n" }
+        $c += "android.suppressUnsupportedCompileSdk=$CompileSdk`n"
+        [System.IO.File]::WriteAllText($full, $c, $utf8)
+        Write-Host 'Added android.suppressUnsupportedCompileSdk'
     }
 }
 
