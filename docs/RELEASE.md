@@ -22,7 +22,10 @@
    Version code = the workflow run number (always increasing).
 4. Use Play App Signing when Play Console offers it.
 
-## Enable the privacy policy page
-Repo -> Settings -> Pages -> Source: Deploy from a branch -> main -> /docs.
-URL: https://gauravkumarit8.github.io/sitestamp/privacy-policy
-Replace [YOUR NAME] and [YOUR EMAIL] in docs/privacy-policy.md first.
+## Privacy policy and landing page
+These live in the separate repo gauravkumarit8/gauravkumarit8.github.io under /sitestamp/.
+Live URLs:
+- Landing page: https://gauravkumarit8.github.io/sitestamp/
+- Privacy policy: https://gauravkumarit8.github.io/sitestamp/privacy-policy.html
+Do not enable GitHub Pages on the sitestamp repo itself (it would clash with the /sitestamp/ path).
+docs/privacy-policy.md here is only a reference copy; keep the two in sync.

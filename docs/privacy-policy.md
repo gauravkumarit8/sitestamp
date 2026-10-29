@@ -9,7 +9,7 @@ Effective date: 28 October 2026
 SiteStamp ("the app") is a camera app that stamps the date, time, GPS location
 and a note onto photos. This policy explains what the app does with your data.
 
-**Developer / contact:** [YOUR NAME], [YOUR EMAIL]
+**Developer / contact:** grvthakur, gaurav954624@gmail.com
 
 ## Short version
 
@@ -67,4 +67,4 @@ backup or ads), this policy will be updated before that version is released.
 
 ## Contact
 
-Questions: [YOUR EMAIL]
+Questions: gaurav954624@gmail.com

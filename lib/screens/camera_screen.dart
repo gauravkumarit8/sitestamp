@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../config.dart';
 import '../services/address_service.dart';
 import '../services/app_settings.dart';
 import '../services/entitlements.dart';
@@ -477,6 +479,33 @@ class _CameraScreenState extends State<CameraScreen>
     );
   }
 
+  Future<void> _openPrivacyPolicy() async {
+    try {
+      final ok = await launchUrl(
+        Uri.parse(kPrivacyPolicyUrl),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!ok) _toast('Could not open the privacy policy.');
+    } catch (_) {
+      _toast('Could not open the privacy policy.');
+    }
+  }
+
+  Future<void> _emailSupport() async {
+    try {
+      final ok = await launchUrl(
+        Uri(
+          scheme: 'mailto',
+          path: kSupportEmail,
+          queryParameters: {'subject': 'SiteStamp support'},
+        ),
+      );
+      if (!ok) _toast('No email app found. Write to $kSupportEmail');
+    } catch (_) {
+      _toast('No email app found. Write to $kSupportEmail');
+    }
+  }
+
   void _openSettings() {
     showModalBottomSheet<void>(
       context: context,
@@ -519,6 +548,18 @@ class _CameraScreenState extends State<CameraScreen>
                           : 'Remove the "Made with SiteStamp" line, add the '
                               'street address, and keep 10 saved notes.',
                     ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: const Text('Privacy policy'),
+                    trailing: const Icon(Icons.open_in_new, size: 18),
+                    onTap: _openPrivacyPolicy,
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.mail_outline),
+                    title: const Text('Contact support'),
+                    subtitle: const Text(kSupportEmail),
+                    onTap: _emailSupport,
                   ),
                   if (kDebugMode)
                     SwitchListTile(

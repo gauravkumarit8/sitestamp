@@ -45,8 +45,8 @@ Permissions used: Camera (to take photos) and Location while the app is open (to
 Photography (alternative: Tools)
 
 ## Contact
-Email: [YOUR EMAIL]
-Privacy policy URL: https://gauravkumarit8.github.io/sitestamp/privacy-policy
+Email: gaurav954624@gmail.com
+Privacy policy URL: https://gauravkumarit8.github.io/sitestamp/privacy-policy.html
 
 ## Graphics to upload
 - App icon 512x512: docs/store/icon_512.png

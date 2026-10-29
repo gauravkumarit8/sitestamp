@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.1
+- Privacy policy link + Contact support in the settings sheet (url_launcher)
+- Contact details and the live privacy policy URL filled in docs
+- Landing page and privacy policy moved to the gauravkumarit8.github.io repo
+- Manifest: allow https/mailto link handling (Android 11+ package visibility)
+
 ## v0.5.0
 - Tap to focus (with focus ring) and exposure point
 - Pinch to zoom (capped at 8x) with zoom badge
