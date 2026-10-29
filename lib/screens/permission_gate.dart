@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../services/app_settings.dart';
+import '../services/entitlements.dart';
 import 'camera_screen.dart';
 
 class PermissionGate extends StatefulWidget {
-  const PermissionGate({super.key});
+  const PermissionGate({
+    super.key,
+    required this.settings,
+    required this.entitlements,
+  });
+
+  final AppSettings settings;
+  final Entitlements entitlements;
 
   @override
   State<PermissionGate> createState() => _PermissionGateState();
@@ -63,7 +72,10 @@ class _PermissionGateState extends State<PermissionGate>
     if (_checking) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (_granted) return const CameraScreen();
+    if (_granted) return CameraScreen(
+        settings: widget.settings,
+        entitlements: widget.entitlements,
+      );
 
     return Scaffold(
       body: SafeArea(

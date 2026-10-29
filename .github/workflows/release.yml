@@ -1,0 +1,83 @@
+name: Release (signed AAB + APK)
+
+# Manual only. Needs 4 repository secrets (see docs/RELEASE.md):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+#   ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check signing secrets
+        run: |
+          missing=0
+          for v in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "::error::Missing secret $v"; missing=1; fi
+          done
+          exit $missing
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ vars.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Platform config
+        run: pwsh -File tool/apply_platform_config.ps1
+
+      - name: Write keystore and key.properties (never committed)
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          {
+            printf "storePassword=%s\n" "$ANDROID_KEYSTORE_PASSWORD"
+            printf "keyPassword=%s\n" "$ANDROID_KEY_PASSWORD"
+            printf "keyAlias=%s\n" "$ANDROID_KEY_ALIAS"
+            printf "storeFile=%s\n" "upload-keystore.jks"
+          } > android/key.properties
+
+      - name: Configure release signing in Gradle
+        run: pwsh -File tool/apply_signing_config.ps1
+
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+
+      - name: Build signed App Bundle (upload this to Play Console)
+        run: flutter build appbundle --release --build-number=${{ github.run_number }}
+
+      - name: Build signed release APK (install on a phone to test R8/minify)
+        run: flutter build apk --release --build-number=${{ github.run_number }}
+
+      - name: Show signer certificate
+        run: keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab | head -12
+
+      - name: Remove secrets from runner
+        if: always()
+        run: rm -f android/app/upload-keystore.jks android/key.properties
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sitestamp-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sitestamp-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30

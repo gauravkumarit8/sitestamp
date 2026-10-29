@@ -123,7 +123,9 @@ class StampService {
             fontWeight: i == 0 ? FontWeight.w700 : FontWeight.w500,
             color: lines[i].startsWith('WARNING')
                 ? const Color(0xFFFF5252)
-                : const Color(0xFFFFFFFF),
+                : lines[i].startsWith('Made with')
+                    ? const Color(0xB3FFFFFF)
+                    : const Color(0xFFFFFFFF),
           ),
         ),
       );

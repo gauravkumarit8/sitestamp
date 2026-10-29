@@ -51,7 +51,12 @@ class LocationService {
     return DateTime.now().difference(at) <= maxAge ? p : null;
   }
 
-  StampData snapshot({required DateTime time, required String memo}) {
+  StampData snapshot({
+    required DateTime time,
+    required String memo,
+    String? address,
+    bool branding = false,
+  }) {
     final p = freshFix();
     return StampData(
       time: time,
@@ -61,6 +66,8 @@ class LocationService {
       altitude: p?.altitude,
       accuracy: p?.accuracy,
       isMocked: p?.isMocked ?? false,
+      address: p == null ? null : address,
+      branding: branding,
     );
   }
 

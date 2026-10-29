@@ -8,6 +8,8 @@ class StampData {
     this.altitude,
     this.accuracy,
     this.isMocked = false,
+    this.address,
+    this.branding = false,
   });
 
   final DateTime time;
@@ -17,6 +19,8 @@ class StampData {
   final double? altitude;
   final double? accuracy;
   final bool isMocked;
+  final String? address;
+  final bool branding;
 
   bool get hasFix => latitude != null && longitude != null;
 
@@ -46,6 +50,8 @@ class StampData {
   List<String> toLines() {
     final lines = <String>[formatTime(time)];
     if (hasFix) {
+      final addr = address?.trim();
+      if (addr != null && addr.isNotEmpty) lines.add(addr);
       lines.add(
         'Lat ${latitude!.toStringAsFixed(6)}  Lon ${longitude!.toStringAsFixed(6)}',
       );
@@ -58,6 +64,7 @@ class StampData {
       lines.add('GPS location unavailable');
     }
     if (memo.isNotEmpty) lines.add('Note: $memo');
+    if (branding) lines.add('Made with SiteStamp');
     return lines;
   }
 }

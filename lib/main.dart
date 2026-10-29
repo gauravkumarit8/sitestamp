@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'screens/permission_gate.dart';
+import 'services/app_settings.dart';
+import 'services/entitlements.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -9,11 +11,20 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations(
     const [DeviceOrientation.portraitUp],
   );
-  runApp(const SiteStampApp());
+  final settings = await AppSettings.load();
+  final entitlements = await Entitlements.load();
+  runApp(SiteStampApp(settings: settings, entitlements: entitlements));
 }
 
 class SiteStampApp extends StatelessWidget {
-  const SiteStampApp({super.key});
+  const SiteStampApp({
+    super.key,
+    required this.settings,
+    required this.entitlements,
+  });
+
+  final AppSettings settings;
+  final Entitlements entitlements;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +36,7 @@ class SiteStampApp extends StatelessWidget {
         colorSchemeSeed: const Color(0xFFFF8F00),
         useMaterial3: true,
       ),
-      home: const PermissionGate(),
+      home: PermissionGate(settings: settings, entitlements: entitlements),
     );
   }
 }
