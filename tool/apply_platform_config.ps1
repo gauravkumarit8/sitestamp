@@ -18,6 +18,29 @@ function Update-File([string]$path, [scriptblock]$transform) {
     }
 }
 
+# --- pubspec: make sure required packages are present (idempotent) ---
+if (Test-Path 'pubspec.yaml') {
+    Update-File 'pubspec.yaml' {
+        param($c)
+        $deps = @(
+            @('geocoding', '^4.0.0'),
+            @('shared_preferences', '^2.5.3')
+        )
+        foreach ($d in $deps) {
+            if ($c -notmatch "(?m)^[ \t]+$($d[0]):") {
+                $rx = [regex]'(?m)^([ \t]+path_provider:.*)$'
+                if ($rx.IsMatch($c)) {
+                    $c = $rx.Replace($c, "`$1`n  $($d[0]): $($d[1])", 1)
+                    Write-Host "pubspec: added $($d[0])"
+                } else {
+                    throw "path_provider line not found in pubspec.yaml; add $($d[0]) manually"
+                }
+            }
+        }
+        return $c
+    }
+}
+
 # --- Android Gradle: minSdk + compileSdk (Kotlin DSL and Groovy) ---
 foreach ($f in @('android/app/build.gradle.kts', 'android/app/build.gradle')) {
     if (Test-Path $f) {

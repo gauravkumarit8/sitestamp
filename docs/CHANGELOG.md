@@ -7,8 +7,7 @@
 - Debug builds (CI APK) get a "Pro (testing only)" switch in settings; release builds stay free until billing is added
 
 ## v0.3.0
-- Signed release workflow (AAB + APK), signing patch script, release guide
-- Privacy policy, Play Store listing text, feature graphic
+- Signed release workflow, privacy policy, store listing, feature graphic
 
 ## v0.2.0
 - Street address on the stamp (background reverse geocoding, toggle in settings)
