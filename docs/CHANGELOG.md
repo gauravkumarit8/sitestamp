@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.0
+- Tap to focus (with focus ring) and exposure point
+- Pinch to zoom (capped at 8x) with zoom badge
+- Optional rule-of-thirds grid (settings)
+- Shutter haptic + brief flash feedback
+- Hindi Play Store listing (docs/store/listing_hi.md)
+- Phone test checklist (docs/TESTING.md)
+
 ## v0.4.0
 - Free/Pro structure (no billing yet): lib/services/entitlements.dart is the single place that decides what is free
 - Free plan: "Made with SiteStamp" line on photos, 3 recent-note chips, no address

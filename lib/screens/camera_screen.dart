@@ -42,6 +42,15 @@ class _CameraScreenState extends State<CameraScreen>
   bool _saving = false;
   String? _error;
 
+  // zoom / focus / shutter feedback
+  double _minZoom = 1.0;
+  double _maxZoom = 1.0;
+  double _zoom = 1.0;
+  double _baseZoom = 1.0;
+  Offset? _focusPoint;
+  Timer? _focusTimer;
+  bool _shutterFlash = false;
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +73,7 @@ class _CameraScreenState extends State<CameraScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _focusTimer?.cancel();
     _location.latest.removeListener(_onFix);
     _address.dispose();
     _location.dispose();
@@ -114,6 +124,15 @@ class _CameraScreenState extends State<CameraScreen>
       try {
         await c.setFlashMode(_flash);
       } catch (_) {} // front cameras often have no flash
+      try {
+        _minZoom = await c.getMinZoomLevel();
+        _maxZoom = await c.getMaxZoomLevel();
+        // Cap pinch zoom: very high digital zoom makes poor proof photos.
+        if (_maxZoom > 8.0) _maxZoom = 8.0;
+        _zoom = _minZoom;
+      } catch (_) {
+        _minZoom = _maxZoom = _zoom = 1.0;
+      }
       if (!mounted) {
         await c.dispose();
         return;
@@ -129,6 +148,36 @@ class _CameraScreenState extends State<CameraScreen>
     } finally {
       _initializing = false;
     }
+  }
+
+  Future<void> _focusAt(Offset p, Size size) async {
+    FocusScope.of(context).unfocus(); // dismiss keyboard on preview tap
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    final point = Offset(
+      (p.dx / size.width).clamp(0.0, 1.0).toDouble(),
+      (p.dy / size.height).clamp(0.0, 1.0).toDouble(),
+    );
+    setState(() => _focusPoint = p);
+    _focusTimer?.cancel();
+    _focusTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _focusPoint = null);
+    });
+    try {
+      await c.setFocusPoint(point);
+      await c.setExposurePoint(point);
+    } catch (_) {} // not supported on every camera
+  }
+
+  Future<void> _setZoom(double z) async {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    final clamped = z.clamp(_minZoom, _maxZoom).toDouble();
+    if ((clamped - _zoom).abs() < 0.01) return;
+    setState(() => _zoom = clamped);
+    try {
+      await c.setZoomLevel(clamped);
+    } catch (_) {}
   }
 
   void _setError(String msg) {
@@ -175,7 +224,14 @@ class _CameraScreenState extends State<CameraScreen>
     final c = _controller;
     if (c == null || !c.value.isInitialized || c.value.isTakingPicture) return;
     if (_saving) return;
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _shutterFlash = true;
+    });
+    HapticFeedback.mediumImpact();
+    Future<void>.delayed(const Duration(milliseconds: 140), () {
+      if (mounted) setState(() => _shutterFlash = false);
+    });
 
     try {
       // Make sure we can save BEFORE taking the picture.
@@ -232,7 +288,56 @@ class _CameraScreenState extends State<CameraScreen>
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          Positioned.fill(child: _buildPreview()),
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: (d) => _focusAt(d.localPosition, constraints.biggest),
+                onScaleStart: (_) => _baseZoom = _zoom,
+                onScaleUpdate: (d) {
+                  if (d.pointerCount >= 2) _setZoom(_baseZoom * d.scale);
+                },
+                child: _buildPreview(),
+              ),
+            ),
+          ),
+          // Rule-of-thirds grid (optional)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: widget.settings,
+                builder: (context, _) => widget.settings.showGrid
+                    ? CustomPaint(painter: _GridPainter())
+                    : const SizedBox.shrink(),
+              ),
+            ),
+          ),
+          // Focus ring
+          if (_focusPoint != null)
+            Positioned(
+              left: _focusPoint!.dx - 32,
+              top: _focusPoint!.dy - 32,
+              child: IgnorePointer(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFFFCA28), width: 2),
+                  ),
+                ),
+              ),
+            ),
+          // Shutter flash
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                opacity: _shutterFlash ? 0.55 : 0.0,
+                duration: const Duration(milliseconds: 90),
+                child: const ColoredBox(color: Colors.white),
+              ),
+            ),
+          ),
           // Top bar
           SafeArea(
             child: Padding(
@@ -273,6 +378,25 @@ class _CameraScreenState extends State<CameraScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (_zoom - _minZoom > 0.05)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0x99000000),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          '${(_zoom / _minZoom).toStringAsFixed(1)}x',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     _buildMemoChips(),
                     const SizedBox(height: 8),
                     ValueListenableBuilder<TextEditingValue>(
@@ -379,6 +503,12 @@ class _CameraScreenState extends State<CameraScreen>
                     onChanged: pro
                         ? (v) => widget.settings.setShowAddress(v)
                         : null,
+                  ),
+                  SwitchListTile(
+                    title: const Text('Grid lines'),
+                    subtitle: const Text('Rule-of-thirds guide while framing.'),
+                    value: widget.settings.showGrid,
+                    onChanged: (v) => widget.settings.setShowGrid(v),
                   ),
                   ListTile(
                     leading: Icon(pro ? Icons.verified : Icons.workspace_premium),
@@ -489,4 +619,22 @@ class _ShutterButton extends StatelessWidget {
       ),
     );
   }
+}
+
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0x66FFFFFF)
+      ..strokeWidth = 1;
+    for (var i = 1; i <= 2; i++) {
+      final x = size.width * i / 3;
+      final y = size.height * i / 3;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
