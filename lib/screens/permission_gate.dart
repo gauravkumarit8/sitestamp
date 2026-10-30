@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../services/app_settings.dart';
+import '../services/billing_service.dart';
 import '../services/entitlements.dart';
 import 'camera_screen.dart';
 
@@ -10,10 +11,12 @@ class PermissionGate extends StatefulWidget {
     super.key,
     required this.settings,
     required this.entitlements,
+    required this.billing,
   });
 
   final AppSettings settings;
   final Entitlements entitlements;
+  final BillingService billing;
 
   @override
   State<PermissionGate> createState() => _PermissionGateState();
@@ -75,6 +78,7 @@ class _PermissionGateState extends State<PermissionGate>
     if (_granted) return CameraScreen(
         settings: widget.settings,
         entitlements: widget.entitlements,
+        billing: widget.billing,
       );
 
     return Scaffold(

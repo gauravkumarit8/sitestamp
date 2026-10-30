@@ -4,7 +4,7 @@ title: SiteStamp Privacy Policy
 
 # SiteStamp Privacy Policy
 
-Effective date: 28 October 2026
+Effective date: 30 October 2026
 
 SiteStamp ("the app") is a camera app that stamps the date, time, GPS location
 and a note onto photos. This policy explains what the app does with your data.
@@ -42,6 +42,13 @@ service to turn your coordinates into a street address. On most Android phones
 this service is provided by Google, so your coordinates may be sent to that
 provider under its own privacy policy. The app itself does not send your
 location to our servers. You can switch this off in the app's settings.
+
+## Purchases
+
+SiteStamp may offer an optional "Pro" upgrade as a subscription or a one-time
+purchase. Payments are processed by Google Play. We do not receive or store your
+card or payment details. The app asks Google Play whether you own Pro and keeps a
+local note on your device so Pro works offline for a limited time.
 
 ## Sharing
 

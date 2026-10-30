@@ -11,20 +11,24 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config.dart';
 import '../services/address_service.dart';
 import '../services/app_settings.dart';
+import '../services/billing_service.dart';
 import '../services/entitlements.dart';
 import '../services/location_service.dart';
 import '../services/stamp_service.dart';
 import '../widgets/gps_status_pill.dart';
+import 'pro_screen.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({
     super.key,
     required this.settings,
     required this.entitlements,
+    required this.billing,
   });
 
   final AppSettings settings;
   final Entitlements entitlements;
+  final BillingService billing;
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -479,6 +483,17 @@ class _CameraScreenState extends State<CameraScreen>
     );
   }
 
+  void _openProScreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ProScreen(
+          billing: widget.billing,
+          entitlements: widget.entitlements,
+        ),
+      ),
+    );
+  }
+
   Future<void> _openPrivacyPolicy() async {
     try {
       final ok = await launchUrl(
@@ -541,13 +556,18 @@ class _CameraScreenState extends State<CameraScreen>
                   ),
                   ListTile(
                     leading: Icon(pro ? Icons.verified : Icons.workspace_premium),
-                    title: Text(pro ? 'SiteStamp Pro' : 'SiteStamp Pro (coming soon)'),
+                    title: Text(pro ? 'SiteStamp Pro' : 'Upgrade to SiteStamp Pro'),
                     subtitle: Text(
                       pro
                           ? 'No branding, address on photos, 10 saved notes.'
                           : 'Remove the "Made with SiteStamp" line, add the '
                               'street address, and keep 10 saved notes.',
                     ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _openProScreen();
+                    },
                   ),
                   ListTile(
                     leading: const Icon(Icons.privacy_tip_outlined),

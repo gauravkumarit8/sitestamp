@@ -25,7 +25,8 @@ if (Test-Path 'pubspec.yaml') {
         $deps = @(
             @('geocoding', '^4.0.0'),
             @('shared_preferences', '^2.5.3'),
-            @('url_launcher', '^6.3.0')
+            @('url_launcher', '^6.3.0'),
+            @('in_app_purchase', '^3.2.0')
         )
         foreach ($d in $deps) {
             if ($c -notmatch "(?m)^[ \t]+$($d[0]):") {

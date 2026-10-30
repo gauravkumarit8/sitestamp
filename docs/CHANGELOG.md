@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.0
+- Google Play Billing: Pro yearly (subscription) + Pro lifetime (one-time)
+- Pro screen with prices, buy and restore; purchases cached with a 14-day grace
+- Entitlements tests; docs/BILLING.md setup guide
+- Privacy policy: Purchases section (30 Oct 2026)
+
+## v0.5.2
+- Fix release signing patch (imports instead of java.util)
+
 ## v0.5.1
 - Privacy policy link + Contact support in the settings sheet (url_launcher)
 - Contact details and the live privacy policy URL filled in docs
