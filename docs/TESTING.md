@@ -26,6 +26,8 @@ Phone model + Android version: ______________________
 | 18 | Pro ON: create a project, take a photo; album "SiteStamp - <project>" appears; "Project:" line on the stamp | |
 | 19 | Pro ON: stamp position Top and size Large change the photo | |
 | 20 | Switch project back to Default; next photo goes to "SiteStamp" album | |
+| 21 | Thumbnail appears after a photo; tap opens the preview; pinch zoom works there | |
+| 22 | Share to WhatsApp: photo arrives with caption (time, address, coordinates, Maps link) and the Maps link opens the right place | |
 
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sitestamp/models/saved_photo.dart';
 import 'package:sitestamp/models/stamp_data.dart';
 import 'package:sitestamp/models/stamp_style.dart';
 import 'package:sitestamp/services/address_service.dart';
@@ -102,5 +103,33 @@ void main() {
     expect(s.size, StampSize.medium);
     expect(StampSize.large.fontFactor > StampSize.small.fontFactor, isTrue);
     expect(s.copyWith(position: StampPosition.top).position, StampPosition.top);
+  });
+
+  test('share text has address, maps link and note', () {
+    final photo = SavedPhoto(
+      path: '/tmp/x.jpg',
+      data: StampData(
+        time: DateTime(2026, 10, 28, 14, 32, 5),
+        memo: 'Gate 3',
+        project: 'Tower A',
+        latitude: 28.6123456,
+        longitude: 77.2090123,
+        address: 'MG Road, Pune',
+      ),
+    );
+    final lines = photo.shareText.split('\n');
+    expect(lines[0], startsWith('28 Oct 2026'));
+    expect(lines, contains('Project: Tower A'));
+    expect(lines, contains('MG Road, Pune'));
+    expect(lines, contains('https://maps.google.com/?q=28.612346,77.209012'));
+    expect(lines.last, 'Note: Gate 3');
+  });
+
+  test('share text without GPS has no maps link', () {
+    final photo = SavedPhoto(
+      path: '/tmp/x.jpg',
+      data: StampData(time: DateTime(2026, 1, 2, 3, 4, 5), memo: ''),
+    );
+    expect(photo.shareText.contains('maps.google.com'), isFalse);
   });
 }

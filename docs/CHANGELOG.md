@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.8.0
+- Last-photo thumbnail next to the shutter; tap for a full-screen preview
+- Share button (WhatsApp, email, etc.) sends the stamped photo with a caption: time, project, address, coordinates, Google Maps link and note
+- Sharing is free on every plan
+- New package: share_plus (added by tool/apply_platform_config.ps1)
+
 ## v0.7.0
 - Projects (Pro): pick a project and photos save to the gallery album "SiteStamp - <project>"; the project name is also printed on the stamp
 - Stamp style (Pro): position (bottom/top) and size (small/medium/large)

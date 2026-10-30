@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -9,6 +10,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
+import '../models/saved_photo.dart';
 import '../models/stamp_data.dart';
 import '../models/stamp_style.dart';
 import '../services/address_service.dart';
@@ -18,6 +20,7 @@ import '../services/entitlements.dart';
 import '../services/location_service.dart';
 import '../services/stamp_service.dart';
 import '../widgets/gps_status_pill.dart';
+import 'photo_preview_screen.dart';
 import 'pro_screen.dart';
 
 class CameraScreen extends StatefulWidget {
@@ -58,6 +61,7 @@ class _CameraScreenState extends State<CameraScreen>
   Offset? _focusPoint;
   Timer? _focusTimer;
   bool _shutterFlash = false;
+  SavedPhoto? _lastPhoto;
 
   @override
   void initState() {
@@ -263,7 +267,7 @@ class _CameraScreenState extends State<CameraScreen>
       );
 
       final shot = await c.takePicture();
-      await StampService.stampAndSave(
+      final sharePath = await StampService.stampAndSave(
         rawPath: shot.path,
         data: data,
         style: widget.entitlements.canCustomizeStamp
@@ -271,6 +275,9 @@ class _CameraScreenState extends State<CameraScreen>
             : const StampStyle(),
       );
       await widget.settings.addRecentMemo(data.memo);
+      if (mounted && sharePath != null) {
+        setState(() => _lastPhoto = SavedPhoto(path: sharePath, data: data));
+      }
       _toast(data.hasFix
           ? 'Saved to gallery'
           : 'Saved (no GPS fix - location not stamped)');
@@ -444,13 +451,52 @@ class _CameraScreenState extends State<CameraScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _ShutterButton(busy: _saving, onTap: _capture),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: _buildLastPhotoThumb(),
+                          ),
+                        ),
+                        _ShutterButton(busy: _saving, onTap: _capture),
+                        const Expanded(child: SizedBox.shrink()),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLastPhotoThumb() {
+    final photo = _lastPhoto;
+    if (photo == null) return const SizedBox(width: 56, height: 56);
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => PhotoPreviewScreen(photo: photo),
+        ),
+      ),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white, width: 2),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Image.file(
+          File(photo.path),
+          fit: BoxFit.cover,
+          cacheWidth: 160,
+          errorBuilder: (context, error, stack) =>
+              const Icon(Icons.image_not_supported_outlined),
+        ),
       ),
     );
   }

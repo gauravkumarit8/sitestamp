@@ -19,7 +19,8 @@ class StampService {
   static const int _maxSide = 1920;
   static const int _jpegQuality = 92;
 
-  static Future<void> stampAndSave({
+  /// Returns the path of a shareable copy (kept in the app cache), or null.
+  static Future<String?> stampAndSave({
     required String rawPath,
     required StampData data,
     StampStyle style = const StampStyle(),
@@ -85,8 +86,19 @@ class StampService {
 
       // 5. Save to the public gallery.
       await Gal.putImage(out.path, album: album ?? StampData.albumFor(data.project));
+
+      // 6. Keep ONE shareable copy in the cache (replaced on every capture).
+      try {
+        final dir = Directory('${tmp.path}/share');
+        if (await dir.exists()) await dir.delete(recursive: true);
+        await dir.create(recursive: true);
+        final copy = await File(out.path).copy('${dir.path}/${data.fileName}');
+        return copy.path;
+      } catch (_) {
+        return null; // sharing is optional; saving already succeeded
+      }
     } finally {
-      // 6. Always clean temp files.
+      // 7. Always clean temp files.
       await _safeDelete(rawPath);
       await _safeDelete(scaledPath);
       await _safeDelete(stampedPngPath);
