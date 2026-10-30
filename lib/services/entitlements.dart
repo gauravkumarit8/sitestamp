@@ -30,6 +30,10 @@ class Entitlements extends ChangeNotifier {
   /// Small "Made with SiteStamp" line on free photos.
   bool get showBranding => !isPro;
 
+  /// Per-job albums and stamp position/size.
+  bool get canUseProjects => isPro;
+  bool get canCustomizeStamp => isPro;
+
   /// How many recent notes appear as chips (more are stored for upgrades).
   int get maxRecentMemos => isPro ? 10 : 3;
 

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sitestamp/models/stamp_data.dart';
+import 'package:sitestamp/models/stamp_style.dart';
 import 'package:sitestamp/services/address_service.dart';
 
 void main() {
@@ -74,5 +75,32 @@ void main() {
       longitude: 2,
     );
     expect(pro.toLines().last, 'Note: Hi');
+  });
+
+  test('project line appears after the time', () {
+    final d = StampData(
+      time: DateTime(2026, 1, 2, 3, 4, 5),
+      memo: '',
+      project: 'Tower A',
+      latitude: 1,
+      longitude: 2,
+    );
+    expect(d.toLines()[1], 'Project: Tower A');
+  });
+
+  test('album names are safe and prefixed', () {
+    expect(StampData.albumFor(''), 'SiteStamp');
+    expect(StampData.albumFor('  '), 'SiteStamp');
+    expect(StampData.albumFor('Tower A'), 'SiteStamp - Tower A');
+    expect(StampData.albumFor('a/b:c*d'), 'SiteStamp - a b c d');
+    expect(StampData.albumFor('x' * 60).length, 'SiteStamp - '.length + 40);
+  });
+
+  test('stamp style defaults and scale', () {
+    const s = StampStyle();
+    expect(s.position, StampPosition.bottom);
+    expect(s.size, StampSize.medium);
+    expect(StampSize.large.fontFactor > StampSize.small.fontFactor, isTrue);
+    expect(s.copyWith(position: StampPosition.top).position, StampPosition.top);
   });
 }

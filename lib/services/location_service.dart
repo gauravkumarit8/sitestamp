@@ -56,6 +56,7 @@ class LocationService {
     required String memo,
     String? address,
     bool branding = false,
+    String project = '',
   }) {
     final p = freshFix();
     return StampData(
@@ -68,6 +69,7 @@ class LocationService {
       isMocked: p?.isMocked ?? false,
       address: p == null ? null : address,
       branding: branding,
+      project: project,
     );
   }
 

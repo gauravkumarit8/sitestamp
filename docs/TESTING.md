@@ -22,6 +22,10 @@ Phone model + Android version: ______________________
 | 14 | Deny location once: what happens? | |
 | 15 | App icon looks right on home screen | |
 | 16 | 20 photos in a row: any slowdown or crash? | |
+| 17 | Free plan: tapping the album chip opens the Pro screen | |
+| 18 | Pro ON: create a project, take a photo; album "SiteStamp - <project>" appears; "Project:" line on the stamp | |
+| 19 | Pro ON: stamp position Top and size Large change the photo | |
+| 20 | Switch project back to Default; next photo goes to "SiteStamp" album | |
 
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a

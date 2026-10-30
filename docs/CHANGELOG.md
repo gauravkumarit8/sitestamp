@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.0
+- Projects (Pro): pick a project and photos save to the gallery album "SiteStamp - <project>"; the project name is also printed on the stamp
+- Stamp style (Pro): position (bottom/top) and size (small/medium/large)
+- Free plan keeps the default SiteStamp album and the standard stamp
+- Tests for album naming, project line and stamp style
+
 ## v0.6.0
 - Google Play Billing: Pro yearly (subscription) + Pro lifetime (one-time)
 - Pro screen with prices, buy and restore; purchases cached with a 14-day grace

@@ -8,6 +8,7 @@ import 'package:native_exif/native_exif.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/stamp_data.dart';
+import '../models/stamp_style.dart';
 
 /// Capture -> downscale + upright -> draw stamp -> JPEG -> EXIF GPS -> gallery.
 ///
@@ -17,11 +18,12 @@ import '../models/stamp_data.dart';
 class StampService {
   static const int _maxSide = 1920;
   static const int _jpegQuality = 92;
-  static const String albumName = 'SiteStamp';
 
   static Future<void> stampAndSave({
     required String rawPath,
     required StampData data,
+    StampStyle style = const StampStyle(),
+    String? album,
   }) async {
     final tmp = await getTemporaryDirectory();
     final id = DateTime.now().microsecondsSinceEpoch;
@@ -46,7 +48,7 @@ class StampService {
       }
 
       // 2. Draw the stamp onto the downscaled bitmap.
-      final size = await _drawStamp(scaled.path, stampedPngPath, data);
+      final size = await _drawStamp(scaled.path, stampedPngPath, data, style);
 
       // 3. Encode final JPEG without resizing again.
       final out = await FlutterImageCompress.compressAndGetFile(
@@ -82,7 +84,7 @@ class StampService {
       }
 
       // 5. Save to the public gallery.
-      await Gal.putImage(out.path, album: albumName);
+      await Gal.putImage(out.path, album: album ?? StampData.albumFor(data.project));
     } finally {
       // 6. Always clean temp files.
       await _safeDelete(rawPath);
@@ -96,6 +98,7 @@ class StampService {
     String srcPath,
     String outPath,
     StampData data,
+    StampStyle style,
   ) async {
     final bytes = await File(srcPath).readAsBytes();
     final codec = await ui.instantiateImageCodec(bytes);
@@ -111,7 +114,7 @@ class StampService {
     canvas.drawImage(image, Offset.zero, Paint());
 
     final pad = w * 0.03;
-    final fontSize = w * 0.034;
+    final fontSize = w * style.size.fontFactor;
     final lines = data.toLines();
 
     final spans = <TextSpan>[];
@@ -142,7 +145,7 @@ class StampService {
     )..layout(maxWidth: w - 2 * pad);
 
     final panelHeight = painter.height + pad * 1.2;
-    final top = h - panelHeight;
+    final top = style.position == StampPosition.top ? 0.0 : h - panelHeight;
     canvas.drawRect(
       Rect.fromLTWH(0, top, w, panelHeight),
       Paint()..color = const Color(0x99000000),

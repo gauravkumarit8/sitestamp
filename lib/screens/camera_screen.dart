@@ -9,6 +9,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
+import '../models/stamp_data.dart';
+import '../models/stamp_style.dart';
 import '../services/address_service.dart';
 import '../services/app_settings.dart';
 import '../services/billing_service.dart';
@@ -252,6 +254,7 @@ class _CameraScreenState extends State<CameraScreen>
       final fix = _location.freshFix();
       final data = _location.snapshot(
         branding: widget.entitlements.showBranding,
+        project: widget.entitlements.canUseProjects ? widget.settings.project : '',
         time: DateTime.now(),
         memo: _memo.text.trim(),
         address: (_addressEnabled && fix != null)
@@ -260,7 +263,13 @@ class _CameraScreenState extends State<CameraScreen>
       );
 
       final shot = await c.takePicture();
-      await StampService.stampAndSave(rawPath: shot.path, data: data);
+      await StampService.stampAndSave(
+        rawPath: shot.path,
+        data: data,
+        style: widget.entitlements.canCustomizeStamp
+            ? widget.settings.stampStyle
+            : const StampStyle(),
+      );
       await widget.settings.addRecentMemo(data.memo);
       _toast(data.hasFix
           ? 'Saved to gallery'
@@ -403,6 +412,8 @@ class _CameraScreenState extends State<CameraScreen>
                           ),
                         ),
                       ),
+                    _buildProjectChip(),
+                    const SizedBox(height: 6),
                     _buildMemoChips(),
                     const SizedBox(height: 8),
                     ValueListenableBuilder<TextEditingValue>(
@@ -442,6 +453,128 @@ class _CameraScreenState extends State<CameraScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildProjectChip() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([widget.settings, widget.entitlements]),
+      builder: (context, _) {
+        final pro = widget.entitlements.canUseProjects;
+        final name = widget.settings.project;
+        final label = (pro && name.isNotEmpty) ? name : 'SiteStamp album';
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: ActionChip(
+            avatar: Icon(
+              pro ? Icons.folder_outlined : Icons.lock_outline,
+              size: 18,
+              color: Colors.white,
+            ),
+            label: Text(label),
+            labelStyle: const TextStyle(color: Colors.white),
+            backgroundColor: const Color(0x99000000),
+            onPressed: pro ? _openProjects : _openProScreen,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openProjects() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: AnimatedBuilder(
+            animation: widget.settings,
+            builder: (ctx, _) {
+              final current = widget.settings.project;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const ListTile(
+                    title: Text('Project (gallery album)'),
+                    subtitle: Text(
+                      'Photos are saved to an album named after the project.',
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      current.isEmpty
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Default (SiteStamp)'),
+                    onTap: () {
+                      widget.settings.selectProject('');
+                      Navigator.of(ctx).pop();
+                    },
+                  ),
+                  for (final p in widget.settings.projects)
+                    ListTile(
+                      leading: Icon(
+                        p == current
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                      ),
+                      title: Text(p),
+                      subtitle: Text(StampData.albumFor(p)),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: 'Remove from list (photos stay in gallery)',
+                        onPressed: () => widget.settings.removeProject(p),
+                      ),
+                      onTap: () {
+                        widget.settings.selectProject(p);
+                        Navigator.of(ctx).pop();
+                      },
+                    ),
+                  ListTile(
+                    leading: const Icon(Icons.add),
+                    title: const Text('New project'),
+                    onTap: () async {
+                      Navigator.of(ctx).pop();
+                      await _newProjectDialog();
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _newProjectDialog() async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New project'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 30,
+          decoration: const InputDecoration(hintText: 'e.g. Tower A, Site 12'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name != null && name.trim().isNotEmpty) {
+      await widget.settings.addProject(name);
+    }
   }
 
   Widget _buildMemoChips() {
@@ -547,6 +680,65 @@ class _CameraScreenState extends State<CameraScreen>
                     onChanged: pro
                         ? (v) => widget.settings.setShowAddress(v)
                         : null,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (!pro) ...[
+                              const Icon(Icons.lock_outline, size: 16),
+                              const SizedBox(width: 6),
+                            ],
+                            Text(pro
+                                ? 'Stamp position and size'
+                                : 'Stamp position and size (Pro)'),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SegmentedButton<StampPosition>(
+                          showSelectedIcon: false,
+                          segments: const [
+                            ButtonSegment(
+                              value: StampPosition.bottom,
+                              label: Text('Bottom'),
+                            ),
+                            ButtonSegment(
+                              value: StampPosition.top,
+                              label: Text('Top'),
+                            ),
+                          ],
+                          selected: {widget.settings.stampStyle.position},
+                          onSelectionChanged: pro
+                              ? (s) => widget.settings.setStampPosition(s.first)
+                              : null,
+                        ),
+                        const SizedBox(height: 8),
+                        SegmentedButton<StampSize>(
+                          showSelectedIcon: false,
+                          segments: const [
+                            ButtonSegment(
+                              value: StampSize.small,
+                              label: Text('Small'),
+                            ),
+                            ButtonSegment(
+                              value: StampSize.medium,
+                              label: Text('Medium'),
+                            ),
+                            ButtonSegment(
+                              value: StampSize.large,
+                              label: Text('Large'),
+                            ),
+                          ],
+                          selected: {widget.settings.stampStyle.size},
+                          onSelectionChanged: pro
+                              ? (s) => widget.settings.setStampSize(s.first)
+                              : null,
+                        ),
+                      ],
+                    ),
                   ),
                   SwitchListTile(
                     title: const Text('Grid lines'),

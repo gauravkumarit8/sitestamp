@@ -12,9 +12,10 @@ starting hypothesis to test, not a fact about the market.
 | "Made with SiteStamp" line | yes | no |
 | Recent-note chips | 3 | 10 |
 | Street address on photo | no | yes |
+| Projects (one gallery album per job) | no | yes |
+| Stamp position and size | no | yes |
 
-Later Pro candidates: projects/folders, PDF/CSV export, stamp position and size,
-cloud backup.
+Later Pro candidates: PDF/CSV export, cloud backup, shared team projects.
 
 ## Price hypotheses (set per-country prices in Play Console)
 Competitor apps seen during research used a mix of weekly, monthly, yearly,

@@ -10,6 +10,7 @@ class StampData {
     this.isMocked = false,
     this.address,
     this.branding = false,
+    this.project = '',
   });
 
   final DateTime time;
@@ -21,6 +22,7 @@ class StampData {
   final bool isMocked;
   final String? address;
   final bool branding;
+  final String project;
 
   bool get hasFix => latitude != null && longitude != null;
 
@@ -40,6 +42,18 @@ class StampData {
         '${_two(t.hour)}:${_two(t.minute)}:${_two(t.second)}  $tz';
   }
 
+  /// Gallery album for a project; empty project -> the default album.
+  static String albumFor(String project) {
+    final cleaned = project
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (cleaned.isEmpty) return 'SiteStamp';
+    final clipped =
+        cleaned.length > 40 ? cleaned.substring(0, 40).trim() : cleaned;
+    return 'SiteStamp - $clipped';
+  }
+
   /// File name used in the gallery, e.g. SiteStamp_20261028_143205.jpg
   String get fileName {
     final t = time;
@@ -49,6 +63,8 @@ class StampData {
 
   List<String> toLines() {
     final lines = <String>[formatTime(time)];
+    final proj = project.trim();
+    if (proj.isNotEmpty) lines.add('Project: $proj');
     if (hasFix) {
       final addr = address?.trim();
       if (addr != null && addr.isNotEmpty) lines.add(addr);
