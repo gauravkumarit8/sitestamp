@@ -30,6 +30,11 @@ and a note onto photos. This policy explains what the app does with your data.
 
 - **Photos:** saved to your device's gallery. They include the stamp and GPS
   coordinates in the image metadata. They are not uploaded by the app.
+- **In-app photo list:** the app also keeps a private copy of each stamped
+  photo, with its stamp details (time, coordinates, address, note, project),
+  inside its own storage so you can browse, share and export photos. Removing a
+  photo from the list does not delete it from your gallery. Free users keep the
+  latest 50 photos in the list. Uninstalling the app deletes these copies.
 - **Notes and settings:** your recent notes and the address on/off setting are
   stored locally on your device.
 - **Temporary files:** working copies made while saving a photo are deleted

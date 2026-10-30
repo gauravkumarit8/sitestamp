@@ -7,8 +7,10 @@ import 'package:gal/gal.dart';
 import 'package:native_exif/native_exif.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../models/library_item.dart';
 import '../models/stamp_data.dart';
 import '../models/stamp_style.dart';
+import 'photo_library.dart';
 
 /// Capture -> downscale + upright -> draw stamp -> JPEG -> EXIF GPS -> gallery.
 ///
@@ -19,12 +21,14 @@ class StampService {
   static const int _maxSide = 1920;
   static const int _jpegQuality = 92;
 
-  /// Returns the path of a shareable copy (kept in the app cache), or null.
-  static Future<String?> stampAndSave({
+  /// Returns the in-app library entry for the saved photo, or null.
+  static Future<LibraryItem?> stampAndSave({
     required String rawPath,
     required StampData data,
     StampStyle style = const StampStyle(),
     String? album,
+    PhotoLibrary? library,
+    int? libraryLimit,
   }) async {
     final tmp = await getTemporaryDirectory();
     final id = DateTime.now().microsecondsSinceEpoch;
@@ -87,16 +91,13 @@ class StampService {
       // 5. Save to the public gallery.
       await Gal.putImage(out.path, album: album ?? StampData.albumFor(data.project));
 
-      // 6. Keep ONE shareable copy in the cache (replaced on every capture).
-      try {
-        final dir = Directory('${tmp.path}/share');
-        if (await dir.exists()) await dir.delete(recursive: true);
-        await dir.create(recursive: true);
-        final copy = await File(out.path).copy('${dir.path}/${data.fileName}');
-        return copy.path;
-      } catch (_) {
-        return null; // sharing is optional; saving already succeeded
-      }
+      // 6. Keep an app-private copy for the in-app list, sharing and export.
+      if (library == null) return null;
+      return await library.add(
+        sourcePath: out.path,
+        data: data,
+        maxCount: libraryLimit,
+      );
     } finally {
       // 7. Always clean temp files.
       await _safeDelete(rawPath);

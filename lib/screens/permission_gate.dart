@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/app_settings.dart';
 import '../services/billing_service.dart';
 import '../services/entitlements.dart';
+import '../services/photo_library.dart';
 import 'camera_screen.dart';
 
 class PermissionGate extends StatefulWidget {
@@ -12,11 +13,13 @@ class PermissionGate extends StatefulWidget {
     required this.settings,
     required this.entitlements,
     required this.billing,
+    required this.library,
   });
 
   final AppSettings settings;
   final Entitlements entitlements;
   final BillingService billing;
+  final PhotoLibrary library;
 
   @override
   State<PermissionGate> createState() => _PermissionGateState();
@@ -79,6 +82,7 @@ class _PermissionGateState extends State<PermissionGate>
         settings: widget.settings,
         entitlements: widget.entitlements,
         billing: widget.billing,
+        library: widget.library,
       );
 
     return Scaffold(

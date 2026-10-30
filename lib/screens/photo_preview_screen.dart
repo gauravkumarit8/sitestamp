@@ -1,14 +1,19 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+// ignore: depend_on_referenced_packages
+import 'package:cross_file/cross_file.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/saved_photo.dart';
 
 class PhotoPreviewScreen extends StatelessWidget {
-  const PhotoPreviewScreen({super.key, required this.photo});
+  const PhotoPreviewScreen({super.key, required this.photo, this.onAllPhotos});
 
   final SavedPhoto photo;
+
+  /// When set, an "All photos" action opens the in-app photo list.
+  final VoidCallback? onAllPhotos;
 
   Future<void> _share(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -34,7 +39,21 @@ class PhotoPreviewScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Last photo'),
+        title: const Text('Photo'),
+        actions: [
+          if (onAllPhotos != null)
+            TextButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onAllPhotos!();
+              },
+              icon: const Icon(Icons.grid_view, color: Colors.white),
+              label: const Text(
+                'All photos',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+        ],
       ),
       body: Column(
         children: [

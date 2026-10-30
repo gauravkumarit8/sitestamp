@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.0
+- FIX: top bar (GPS pill, flash, switch, settings) was vertically centred on screen and overlapped the shutter when the keyboard opened; it is now pinned to the top
+- FIX: share_plus ^13.3.1 (11/12 conflicted with geolocator 14 over win32)
+- In-app photo list: every photo is also kept as an app-private copy; grid with project filter, multi-select, share, remove-from-app (gallery copies are never deleted)
+- Free plan keeps the latest 50 photos in the list; Pro keeps everything
+- Export a project or selection as PDF report (newest 60 photos, 4 per page) or CSV spreadsheet (Pro)
+- Stamp preview in settings shows position/size and the free/Pro difference
+- Last-photo thumbnail now loads at startup and opens the list when empty
+- Snackbar shortened so it does not cover the shutter for long
+
 ## v0.8.0
 - Last-photo thumbnail next to the shutter; tap for a full-screen preview
 - Share button (WhatsApp, email, etc.) sends the stamped photo with a caption: time, project, address, coordinates, Google Maps link and note

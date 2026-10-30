@@ -18,8 +18,11 @@ import '../services/app_settings.dart';
 import '../services/billing_service.dart';
 import '../services/entitlements.dart';
 import '../services/location_service.dart';
+import '../services/photo_library.dart';
 import '../services/stamp_service.dart';
 import '../widgets/gps_status_pill.dart';
+import '../widgets/stamp_preview.dart';
+import 'library_screen.dart';
 import 'photo_preview_screen.dart';
 import 'pro_screen.dart';
 
@@ -29,11 +32,13 @@ class CameraScreen extends StatefulWidget {
     required this.settings,
     required this.entitlements,
     required this.billing,
+    required this.library,
   });
 
   final AppSettings settings;
   final Entitlements entitlements;
   final BillingService billing;
+  final PhotoLibrary library;
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -69,7 +74,17 @@ class _CameraScreenState extends State<CameraScreen>
     WidgetsBinding.instance.addObserver(this);
     _location.latest.addListener(_onFix);
     _location.start(); // pre-warm GPS immediately
+    widget.library.addListener(_refreshLatest);
+    _refreshLatest();
     _initCamera();
+  }
+
+  Future<void> _refreshLatest() async {
+    final items = await widget.library.list();
+    if (!mounted) return;
+    setState(() {
+      _lastPhoto = items.isEmpty ? null : items.first.toSavedPhoto();
+    });
   }
 
   bool get _addressEnabled =>
@@ -86,6 +101,7 @@ class _CameraScreenState extends State<CameraScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _focusTimer?.cancel();
+    widget.library.removeListener(_refreshLatest);
     _location.latest.removeListener(_onFix);
     _address.dispose();
     _location.dispose();
@@ -267,16 +283,18 @@ class _CameraScreenState extends State<CameraScreen>
       );
 
       final shot = await c.takePicture();
-      final sharePath = await StampService.stampAndSave(
+      final item = await StampService.stampAndSave(
         rawPath: shot.path,
         data: data,
         style: widget.entitlements.canCustomizeStamp
             ? widget.settings.stampStyle
             : const StampStyle(),
+        library: widget.library,
+        libraryLimit: widget.entitlements.libraryLimit,
       );
       await widget.settings.addRecentMemo(data.memo);
-      if (mounted && sharePath != null) {
-        setState(() => _lastPhoto = SavedPhoto(path: sharePath, data: data));
+      if (mounted && item != null) {
+        setState(() => _lastPhoto = item.toSavedPhoto());
       }
       _toast(data.hasFix
           ? 'Saved to gallery'
@@ -292,7 +310,12 @@ class _CameraScreenState extends State<CameraScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(msg)));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          duration: const Duration(milliseconds: 1800),
+        ),
+      );
   }
 
   Future<void> _onPillTap() async {
@@ -369,6 +392,7 @@ class _CameraScreenState extends State<CameraScreen>
                   Expanded(
                     child: Align(
                       alignment: Alignment.centerLeft,
+                      heightFactor: 1.0,
                       child: GpsStatusPill(
                         location: _location,
                         onTap: _onPillTap,
@@ -473,22 +497,49 @@ class _CameraScreenState extends State<CameraScreen>
     );
   }
 
+  void _openLibrary() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LibraryScreen(
+          library: widget.library,
+          entitlements: widget.entitlements,
+          billing: widget.billing,
+        ),
+      ),
+    );
+  }
+
   Widget _buildLastPhotoThumb() {
     final photo = _lastPhoto;
-    if (photo == null) return const SizedBox(width: 56, height: 56);
+    final frame = BoxDecoration(
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: Colors.white, width: 2),
+      color: const Color(0x66000000),
+    );
+    if (photo == null) {
+      return GestureDetector(
+        onTap: _openLibrary,
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: frame,
+          child: const Icon(Icons.photo_library_outlined, color: Colors.white),
+        ),
+      );
+    }
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => PhotoPreviewScreen(photo: photo),
+          builder: (_) => PhotoPreviewScreen(
+            photo: photo,
+            onAllPhotos: _openLibrary,
+          ),
         ),
       ),
       child: Container(
         width: 56,
         height: 56,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white, width: 2),
-        ),
+        decoration: frame,
         clipBehavior: Clip.antiAlias,
         child: Image.file(
           File(photo.path),
@@ -499,6 +550,21 @@ class _CameraScreenState extends State<CameraScreen>
         ),
       ),
     );
+  }
+
+  List<String> _sampleStampLines(bool pro) {
+    final fix = _location.freshFix();
+    return StampData(
+      time: DateTime.now(),
+      memo: 'Sample note',
+      latitude: fix?.latitude ?? 28.6139,
+      longitude: fix?.longitude ?? 77.2090,
+      altitude: fix?.altitude ?? 215,
+      accuracy: fix?.accuracy ?? 5,
+      address: pro ? 'Sample Street, City' : null,
+      project: pro ? widget.settings.project : '',
+      branding: !pro,
+    ).toLines();
   }
 
   Widget _buildProjectChip() {
@@ -726,6 +792,20 @@ class _CameraScreenState extends State<CameraScreen>
                     onChanged: pro
                         ? (v) => widget.settings.setShowAddress(v)
                         : null,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                    child: Center(
+                      child: SizedBox(
+                        width: 150,
+                        child: StampPreview(
+                          lines: _sampleStampLines(pro),
+                          style: pro
+                              ? widget.settings.stampStyle
+                              : const StampStyle(),
+                        ),
+                      ),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),

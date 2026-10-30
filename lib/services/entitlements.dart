@@ -30,6 +30,12 @@ class Entitlements extends ChangeNotifier {
   /// Small "Made with SiteStamp" line on free photos.
   bool get showBranding => !isPro;
 
+  /// PDF/CSV export of the in-app photo list.
+  bool get canExport => isPro;
+
+  /// Photos kept in the in-app list (null = unlimited). Gallery copies are never removed.
+  int? get libraryLimit => isPro ? null : 50;
+
   /// Per-job albums and stamp position/size.
   bool get canUseProjects => isPro;
   bool get canCustomizeStamp => isPro;

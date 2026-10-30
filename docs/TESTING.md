@@ -29,6 +29,13 @@ Phone model + Android version: ______________________
 | 21 | Thumbnail appears after a photo; tap opens the preview; pinch zoom works there | |
 | 22 | Share to WhatsApp: photo arrives with caption (time, address, coordinates, Maps link) and the Maps link opens the right place | |
 
+| 23 | Top bar (GPS pill, flash, switch, settings) is at the TOP of the screen; keyboard open does not overlap the shutter | |
+| 24 | Thumbnail opens the photo; "All photos" opens the grid; filter chips by project | |
+| 25 | Long-press selects photos; Share (2+ photos), Remove from app (gallery copy stays) | |
+| 26 | Pro ON: Export PDF opens the share sheet; PDF has photos + captions; CSV opens in Excel/Sheets | |
+| 27 | Free: Export shows lock and opens the Pro screen | |
+| 28 | Settings: stamp preview changes with position and size | |
+
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a
 crash, also send the Build run link and, if you can, `adb logcat` output.

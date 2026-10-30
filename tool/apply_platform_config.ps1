@@ -27,7 +27,8 @@ if (Test-Path 'pubspec.yaml') {
             @('shared_preferences', '^2.5.3'),
             @('url_launcher', '^6.3.0'),
             @('in_app_purchase', '^3.2.0'),
-            @('share_plus', '^11.0.0')
+            @('share_plus', '^13.3.1'),
+            @('pdf', '^3.11.0')
         )
         foreach ($d in $deps) {
             if ($c -notmatch "(?m)^[ \t]+$($d[0]):") {
@@ -40,6 +41,8 @@ if (Test-Path 'pubspec.yaml') {
                 }
             }
         }
+        # share_plus 11/12 conflict with geolocator 14 (win32); force the compatible line.
+        $c = ([regex]'(?m)^([ \t]+)share_plus:[ \t]*\S.*$').Replace($c, '${1}share_plus: ^13.3.1')
         return $c
     }
 }

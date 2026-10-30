@@ -14,6 +14,8 @@ starting hypothesis to test, not a fact about the market.
 | Street address on photo | no | yes |
 | Projects (one gallery album per job) | no | yes |
 | Stamp position and size | no | yes |
+| Photos kept in the in-app list | latest 50 | unlimited |
+| PDF / CSV export | no | yes |
 
 Later Pro candidates: PDF/CSV export, cloud backup, shared team projects.
 

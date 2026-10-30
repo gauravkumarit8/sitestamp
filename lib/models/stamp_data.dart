@@ -61,6 +61,45 @@ class StampData {
         '${_two(t.hour)}${_two(t.minute)}${_two(t.second)}.jpg';
   }
 
+  /// "UTC+05:30"
+  static String tzLabel(DateTime t) {
+    final off = t.timeZoneOffset;
+    final sign = off.isNegative ? '-' : '+';
+    final a = off.abs();
+    return 'UTC$sign${_two(a.inHours)}:${_two(a.inMinutes % 60)}';
+  }
+
+  /// "2026-10-28 14:32:05" (local time)
+  static String isoLocal(DateTime t) =>
+      '${t.year}-${_two(t.month)}-${_two(t.day)} '
+      '${_two(t.hour)}:${_two(t.minute)}:${_two(t.second)}';
+
+  Map<String, Object?> toJson() => {
+        'time': time.millisecondsSinceEpoch,
+        'memo': memo,
+        'lat': latitude,
+        'lon': longitude,
+        'alt': altitude,
+        'acc': accuracy,
+        'mock': isMocked,
+        'address': address,
+        'branding': branding,
+        'project': project,
+      };
+
+  factory StampData.fromJson(Map<String, dynamic> j) => StampData(
+        time: DateTime.fromMillisecondsSinceEpoch((j['time'] as num).toInt()),
+        memo: (j['memo'] as String?) ?? '',
+        latitude: (j['lat'] as num?)?.toDouble(),
+        longitude: (j['lon'] as num?)?.toDouble(),
+        altitude: (j['alt'] as num?)?.toDouble(),
+        accuracy: (j['acc'] as num?)?.toDouble(),
+        isMocked: (j['mock'] as bool?) ?? false,
+        address: j['address'] as String?,
+        branding: (j['branding'] as bool?) ?? false,
+        project: (j['project'] as String?) ?? '',
+      );
+
   List<String> toLines() {
     final lines = <String>[formatTime(time)];
     final proj = project.trim();
