@@ -56,15 +56,20 @@ if ($c.Contains($old)) {
 $mAndroid = ([regex]'(?m)^android\s*\{').Match($c)
 if (-not $mAndroid.Success) { Fail 'android { block not found' }
 $header = @'
-val keystoreProperties = java.util.Properties()
+val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
-    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 
 '@
 $c = $c.Insert($mAndroid.Index, $header)
+
+# `java.util.Properties` does not resolve inside Gradle Kotlin scripts (`java` is
+# Gradle's extension), so use imports at the top of the file instead.
+$imports = "import java.io.FileInputStream`nimport java.util.Properties`n`n"
+$c = $imports + $c
 
 [System.IO.File]::WriteAllText($full, $c, $utf8)
 Write-Host 'Release signing configured in build.gradle.kts'
