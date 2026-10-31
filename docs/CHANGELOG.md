@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.9.2
+- Lint/analyze cleanup: remove unneeded `!`, unneeded cross_file imports, add braces
+
 ## v0.9.1
 - FIX: camera screen collapsed into a strip at the top (Stack shrank to the top bar's height). Stack now fills the screen and the top bar is pinned with Positioned
 - Place name on the photo: new setting "Name / Name + GPS / GPS only" (default: Name). If no name is available the photo falls back to GPS coordinates

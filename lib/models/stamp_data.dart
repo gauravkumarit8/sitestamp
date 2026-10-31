@@ -115,7 +115,7 @@ class StampData {
       // Coordinates are shown unless a place name replaces them.
       final showCoords =
           !showAddr || locationMode == StampLocationMode.both;
-      if (showAddr) lines.add(addr!);
+      if (showAddr) lines.add(addr);
       if (showCoords) {
         lines.add(
           'Lat ${latitude!.toStringAsFixed(6)}  Lon ${longitude!.toStringAsFixed(6)}',

@@ -78,12 +78,14 @@ class _PermissionGateState extends State<PermissionGate>
     if (_checking) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (_granted) return CameraScreen(
+    if (_granted) {
+      return CameraScreen(
         settings: widget.settings,
         entitlements: widget.entitlements,
         billing: widget.billing,
         library: widget.library,
       );
+    }
 
     return Scaffold(
       body: SafeArea(
