@@ -13,7 +13,11 @@ void main() {
     final e = await Entitlements.load();
     expect(e.isPro, isFalse);
     expect(e.showBranding, isTrue);
-    expect(e.canShowAddress, isFalse);
+    expect(e.canShowAddress, isTrue); // place name is free
+    expect(e.canUseProjects, isFalse);
+    expect(e.canCustomizeStamp, isFalse);
+    expect(e.canExport, isFalse);
+    expect(e.libraryLimit, 50);
     expect(e.maxRecentMemos, 3);
   });
 
@@ -26,6 +30,9 @@ void main() {
     expect(e.isPro, isTrue);
     expect(e.showBranding, isFalse);
     expect(e.maxRecentMemos, 10);
+    expect(e.canUseProjects, isTrue);
+    expect(e.canExport, isTrue);
+    expect(e.libraryLimit, isNull);
   });
 
   test('purchase not re-confirmed for 20 days falls back to free', () async {

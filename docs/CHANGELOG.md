@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.9.2
+- Test fix: entitlements test now expects the free place name and checks Pro-only flags
 - Lint/analyze cleanup: remove unneeded `!`, unneeded cross_file imports, add braces
 
 ## v0.9.1
