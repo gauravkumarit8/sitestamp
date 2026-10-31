@@ -59,6 +59,9 @@ class LocationService {
     bool branding = false,
     String project = '',
     StampLocationMode locationMode = StampLocationMode.both,
+    String company = '',
+    String reference = '',
+    String inspector = '',
   }) {
     final p = freshFix();
     return StampData(
@@ -73,6 +76,9 @@ class LocationService {
       branding: branding,
       project: project,
       locationMode: locationMode,
+      company: company,
+      reference: reference,
+      inspector: inspector,
     );
   }
 

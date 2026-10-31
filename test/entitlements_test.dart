@@ -19,6 +19,9 @@ void main() {
     expect(e.canExport, isFalse);
     expect(e.libraryLimit, 50);
     expect(e.maxRecentMemos, 3);
+    expect(e.showAds, isTrue);
+    expect(e.canUseStampText, isFalse);
+    expect(e.canMakeCollage, isFalse);
   });
 
   test('recently confirmed purchase is Pro', () async {
@@ -33,6 +36,9 @@ void main() {
     expect(e.canUseProjects, isTrue);
     expect(e.canExport, isTrue);
     expect(e.libraryLimit, isNull);
+    expect(e.showAds, isFalse);
+    expect(e.canUseStampText, isTrue);
+    expect(e.canMakeCollage, isTrue);
   });
 
   test('purchase not re-confirmed for 20 days falls back to free', () async {

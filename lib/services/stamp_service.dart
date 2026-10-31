@@ -140,8 +140,8 @@ class StampService {
             color: lines[i].startsWith('WARNING')
                 ? const Color(0xFFFF5252)
                 : lines[i].startsWith('Made with')
-                    ? const Color(0xB3FFFFFF)
-                    : const Color(0xFFFFFFFF),
+                    ? Color(style.theme.textArgb).withAlpha(0xB3)
+                    : Color(style.theme.textArgb),
           ),
         ),
       );
@@ -161,7 +161,7 @@ class StampService {
     final top = style.position == StampPosition.top ? 0.0 : h - panelHeight;
     canvas.drawRect(
       Rect.fromLTWH(0, top, w, panelHeight),
-      Paint()..color = const Color(0x99000000),
+      Paint()..color = Color(style.theme.panelArgb),
     );
     painter.paint(canvas, Offset(pad, top + pad * 0.6));
 

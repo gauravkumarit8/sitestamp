@@ -15,6 +15,10 @@ class AppSettings extends ChangeNotifier {
   static const String _kStampPos = 'stamp_position';
   static const String _kStampSize = 'stamp_size';
   static const String _kLocationMode = 'location_mode';
+  static const String _kStampTheme = 'stamp_theme';
+  static const String _kCompany = 'stamp_company';
+  static const String _kReference = 'stamp_reference';
+  static const String _kInspector = 'stamp_inspector';
   static const int maxProjects = 30;
   static const int maxRecent = 10;
 
@@ -34,6 +38,9 @@ class AppSettings extends ChangeNotifier {
   String _project = '';
   StampStyle _style = const StampStyle();
   StampLocationMode _locationMode = StampLocationMode.addressFirst;
+  String _company = '';
+  String _reference = '';
+  String _inspector = '';
 
   bool get showAddress => _showAddress;
   bool get showGrid => _showGrid;
@@ -42,6 +49,9 @@ class AppSettings extends ChangeNotifier {
   String get project => _project;
   StampStyle get stampStyle => _style;
   StampLocationMode get locationMode => _locationMode;
+  String get companyName => _company;
+  String get reference => _reference;
+  String get inspector => _inspector;
 
   static Future<AppSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -61,9 +71,16 @@ class AppSettings extends ChangeNotifier {
         .clamp(0, StampLocationMode.values.length - 1)
         .toInt();
     s._locationMode = StampLocationMode.values[mode];
+    s._company = prefs.getString(_kCompany) ?? '';
+    s._reference = prefs.getString(_kReference) ?? '';
+    s._inspector = prefs.getString(_kInspector) ?? '';
+    final theme = (prefs.getInt(_kStampTheme) ?? 0)
+        .clamp(0, StampTheme.values.length - 1)
+        .toInt();
     s._style = StampStyle(
       position: StampPosition.values[pos],
       size: StampSize.values[size],
+      theme: StampTheme.values[theme],
     );
     return s;
   }
@@ -120,6 +137,26 @@ class AppSettings extends ChangeNotifier {
     _locationMode = mode;
     notifyListeners();
     await _prefs.setInt(_kLocationMode, mode.index);
+  }
+
+  Future<void> setStampTheme(StampTheme t) async {
+    _style = _style.copyWith(theme: t);
+    notifyListeners();
+    await _prefs.setInt(_kStampTheme, t.index);
+  }
+
+  Future<void> setStampText({
+    required String company,
+    required String reference,
+    required String inspector,
+  }) async {
+    _company = company.trim();
+    _reference = reference.trim();
+    _inspector = inspector.trim();
+    notifyListeners();
+    await _prefs.setString(_kCompany, _company);
+    await _prefs.setString(_kReference, _reference);
+    await _prefs.setString(_kInspector, _inspector);
   }
 
   Future<void> setStampPosition(StampPosition p) async {

@@ -41,6 +41,9 @@ class ExportService {
       'address',
       'note',
       'mock_location',
+      'company',
+      'reference',
+      'inspector',
     ];
     final rows = <String>[header.join(',')];
     for (final it in items) {
@@ -58,6 +61,9 @@ class ExportService {
           d.address ?? '',
           d.memo,
           d.isMocked ? 'yes' : 'no',
+          d.company,
+          d.reference,
+          d.inspector,
         ].map(csvEscape).join(','),
       );
     }
@@ -75,7 +81,13 @@ class ExportService {
     final d = item.data;
     final lines = <String>[
       '#$index  ${StampData.formatTime(d.time)}',
+      if (d.company.trim().isNotEmpty) d.company.trim(),
       if (d.project.trim().isNotEmpty) 'Project: ${d.project.trim()}',
+      if (d.reference.trim().isNotEmpty || d.inspector.trim().isNotEmpty)
+        [
+          if (d.reference.trim().isNotEmpty) 'Ref: ${d.reference.trim()}',
+          if (d.inspector.trim().isNotEmpty) 'By: ${d.inspector.trim()}',
+        ].join('   '),
       if ((d.address ?? '').trim().isNotEmpty)
         _clip(d.address!.trim(), 120),
       if (d.hasFix)

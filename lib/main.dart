@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'screens/permission_gate.dart';
+import 'services/ads_service.dart';
 import 'services/app_settings.dart';
 import 'services/billing_service.dart';
 import 'services/entitlements.dart';
@@ -19,6 +20,12 @@ Future<void> main() async {
   final entitlements = await Entitlements.load();
   final billing = BillingService(entitlements);
   unawaited(billing.init()); // do not delay app start
+  if (entitlements.showAds) {
+    // After the first frames, so the consent form can show over the UI.
+    unawaited(
+      Future<void>.delayed(const Duration(seconds: 2), AdsService.instance.init),
+    );
+  }
   runApp(
     SiteStampApp(
       settings: settings,

@@ -159,4 +159,45 @@ void main() {
     expect(gps, isNot(contains('Station Rd')));
     expect(gps.any((l) => l.startsWith('Lat ')), isTrue);
   });
+
+  test('company, reference and inspector lines', () {
+    final d = StampData(
+      time: DateTime(2026, 1, 2, 3, 4, 5),
+      memo: '',
+      company: 'ABC Constructions',
+      reference: 'JOB-42',
+      inspector: 'R. Kumar',
+      latitude: 1,
+      longitude: 2,
+    );
+    final lines = d.toLines();
+    expect(lines.first, 'ABC Constructions');
+    expect(lines[1], startsWith('02 Jan 2026'));
+    expect(lines[2], 'Ref: JOB-42   By: R. Kumar');
+    final back = StampData.fromJson(d.toJson());
+    expect(back.company, 'ABC Constructions');
+    expect(back.reference, 'JOB-42');
+    expect(back.inspector, 'R. Kumar');
+  });
+
+  test('stamp themes have distinct colours and labels', () {
+    expect(StampTheme.classic.textArgb, isNot(StampTheme.light.textArgb));
+    expect(StampTheme.bright.label, 'Bright');
+    expect(const StampStyle().theme, StampTheme.classic);
+    expect(
+      const StampStyle().copyWith(theme: StampTheme.light).theme,
+      StampTheme.light,
+    );
+  });
+
+  test('plus codes are removed from place names', () {
+    expect(AddressService.stripPlusCode('489X+796'), '');
+    expect(AddressService.stripPlusCode('489X+796 Station Road'), 'Station Road');
+    expect(AddressService.stripPlusCode('489X+796, Muzaffarpur'), 'Muzaffarpur');
+    expect(AddressService.stripPlusCode('Station Road'), 'Station Road');
+    expect(
+      AddressService.joinParts(['489X+796', 'Muzaffarpur', 'Bihar', '843113']),
+      'Muzaffarpur, Bihar, 843113',
+    );
+  });
 }

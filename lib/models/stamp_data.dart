@@ -14,6 +14,9 @@ class StampData {
     this.branding = false,
     this.project = '',
     this.locationMode = StampLocationMode.both,
+    this.company = '',
+    this.reference = '',
+    this.inspector = '',
   });
 
   final DateTime time;
@@ -27,6 +30,9 @@ class StampData {
   final bool branding;
   final String project;
   final StampLocationMode locationMode;
+  final String company;
+  final String reference;
+  final String inspector;
 
   bool get hasFix => latitude != null && longitude != null;
 
@@ -89,6 +95,9 @@ class StampData {
         'address': address,
         'branding': branding,
         'project': project,
+        'company': company,
+        'reference': reference,
+        'inspector': inspector,
       };
 
   factory StampData.fromJson(Map<String, dynamic> j) => StampData(
@@ -102,12 +111,25 @@ class StampData {
         address: j['address'] as String?,
         branding: (j['branding'] as bool?) ?? false,
         project: (j['project'] as String?) ?? '',
+        company: (j['company'] as String?) ?? '',
+        reference: (j['reference'] as String?) ?? '',
+        inspector: (j['inspector'] as String?) ?? '',
       );
 
   List<String> toLines() {
-    final lines = <String>[formatTime(time)];
+    final lines = <String>[];
+    final co = company.trim();
+    if (co.isNotEmpty) lines.add(co);
+    lines.add(formatTime(time));
     final proj = project.trim();
     if (proj.isNotEmpty) lines.add('Project: $proj');
+    final ref = reference.trim();
+    final insp = inspector.trim();
+    final refLine = [
+      if (ref.isNotEmpty) 'Ref: $ref',
+      if (insp.isNotEmpty) 'By: $insp',
+    ].join('   ');
+    if (refLine.isNotEmpty) lines.add(refLine);
     if (hasFix) {
       final addr = address?.trim();
       final hasAddr = addr != null && addr.isNotEmpty;

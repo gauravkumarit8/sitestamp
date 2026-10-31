@@ -40,6 +40,13 @@ Phone model + Android version: ______________________
 | 30 | Settings: Name / Name + GPS / GPS only changes the stamp preview; place name appears under the GPS pill after a few seconds (needs internet) | |
 | 31 | Photo shows the place name instead of Lat/Lon (and falls back to Lat/Lon in airplane mode) | |
 
+| 32 | Place name no longer shows a Plus Code like 489X+796 | |
+| 33 | Free: banner (labelled Test Ad) at the bottom of the Photos screen only; none on the camera screen; none after enabling Pro | |
+| 34 | Free: Export asks "Watch ad / Upgrade"; Watch ad then export works once | |
+| 35 | Pro: Company and job details saved; appear on the next photo; themes change the stamp colours | |
+| 36 | Pro: select 2 photos, tap compare icon: Before/After image is built, saved to gallery, share sheet opens | |
+| 37 | FRONT CAMERA, phone held upright: photo is upright (not sideways) | |
+
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a
 crash, also send the Build run link and, if you can, `adb logcat` output.

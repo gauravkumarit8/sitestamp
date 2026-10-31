@@ -20,12 +20,20 @@ class AddressService {
   bool _disposed = false;
   DateTime? _lastAttempt;
 
+  // Google "Plus Codes" such as 489X+796 are not place names; drop them.
+  static final RegExp _plusCode = RegExp(
+    r'^[23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{2,3}\b[\s,]*',
+    caseSensitive: false,
+  );
+
+  static String stripPlusCode(String s) => s.trim().replaceFirst(_plusCode, '').trim();
+
   /// Joins non-empty, de-duplicated parts: "MG Road, Pune, Maharashtra".
   static String joinParts(Iterable<String?> parts) {
     final out = <String>[];
     for (final part in parts) {
-      final t = part?.trim();
-      if (t != null && t.isNotEmpty && !out.contains(t)) out.add(t);
+      final t = part == null ? '' : stripPlusCode(part);
+      if (t.isNotEmpty && !out.contains(t)) out.add(t);
     }
     return out.join(', ');
   }

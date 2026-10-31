@@ -4,7 +4,7 @@ title: SiteStamp Privacy Policy
 
 # SiteStamp Privacy Policy
 
-Effective date: 30 October 2026
+Effective date: 31 October 2026
 
 SiteStamp ("the app") is a camera app that stamps the date, time, GPS location
 and a note onto photos. This policy explains what the app does with your data.
@@ -15,7 +15,7 @@ and a note onto photos. This policy explains what the app does with your data.
 
 - No account is needed.
 - Your photos, notes and settings stay on your device.
-- The app has no ads and no analytics, and we do not sell your data.
+- The free version shows ads (Google AdMob) on the photo list screen, never on the camera. Pro removes them. There is no analytics and we do not sell your data.
 - The optional address lookup uses your phone's own location service.
 
 ## What the app accesses
@@ -47,6 +47,18 @@ service to turn your coordinates into a street address. On most Android phones
 this service is provided by Google, so your coordinates may be sent to that
 provider under its own privacy policy. The app itself does not send your
 location to our servers. You can switch this off in the app's settings.
+
+## Advertising
+
+The free version of the app shows ads provided by Google AdMob: a small banner on
+the photo list screen and an optional "watch an ad" reward for exporting. Ads are
+not shown on the camera screen and are not shown to Pro users. To show ads, Google
+and its partners may collect and use device identifiers such as the advertising ID,
+your IP address and approximate location, and app usage and diagnostics data, as
+described in Google's policy (https://policies.google.com/technologies/partner-sites).
+Where required (for example in the EEA and UK) the app asks for your consent first.
+You can reset or opt out of personalised ads in your phone's Google settings.
+We do not give advertisers your photos, notes or precise location.
 
 ## Purchases
 

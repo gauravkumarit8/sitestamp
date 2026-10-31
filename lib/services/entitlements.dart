@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config.dart';
+
 /// Single place that decides what is free and what is Pro.
 /// Tune the getters below to change the free/Pro split.
 ///
@@ -30,6 +32,15 @@ class Entitlements extends ChangeNotifier {
 
   /// Small "Made with SiteStamp" line on free photos.
   bool get showBranding => !isPro;
+
+  /// Ads are shown to free users only (never on the camera screen).
+  bool get showAds => kAdsEnabled && !isPro;
+
+  /// Company name, job reference and inspector name printed on the stamp.
+  bool get canUseStampText => isPro;
+
+  /// Before/After comparison images.
+  bool get canMakeCollage => isPro;
 
   /// PDF/CSV export of the in-app photo list.
   bool get canExport => isPro;

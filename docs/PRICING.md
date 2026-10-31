@@ -15,7 +15,11 @@ starting hypothesis to test, not a fact about the market.
 | Projects (one gallery album per job) | no | yes |
 | Stamp position and size | no | yes |
 | Photos kept in the in-app list | latest 50 | unlimited |
-| PDF / CSV export | no | yes |
+| PDF / CSV export | once per rewarded ad | yes, unlimited |
+| Ads | banner on Photos screen + rewarded | none |
+| Company / job / inspector lines | no | yes |
+| Stamp themes | no | yes |
+| Before / After images | no | yes |
 
 Later Pro candidates: PDF/CSV export, cloud backup, shared team projects.
 

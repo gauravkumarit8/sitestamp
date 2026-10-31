@@ -40,7 +40,7 @@ class StampPreview extends StatelessWidget {
                   top: atTop ? 0 : null,
                   bottom: atTop ? null : 0,
                   child: Container(
-                    color: const Color(0x99000000),
+                    color: Color(style.theme.panelArgb),
                     padding: EdgeInsets.all(pad),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,8 +51,8 @@ class StampPreview extends StatelessWidget {
                             lines[i],
                             style: TextStyle(
                               color: lines[i].startsWith('Made with')
-                                  ? const Color(0xB3FFFFFF)
-                                  : Colors.white,
+                                  ? Color(style.theme.textArgb).withAlpha(0xB3)
+                                  : Color(style.theme.textArgb),
                               fontSize: fontSize,
                               height: 1.25,
                               fontWeight:

@@ -11,9 +11,16 @@ class SavedPhoto {
   /// Text sent along with the picture (WhatsApp shows it as the caption).
   String get shareText {
     final d = data;
-    final lines = <String>[StampData.formatTime(d.time)];
+    final lines = <String>[];
+    if (d.company.trim().isNotEmpty) lines.add(d.company.trim());
+    lines.add(StampData.formatTime(d.time));
     final proj = d.project.trim();
     if (proj.isNotEmpty) lines.add('Project: $proj');
+    final refLine = [
+      if (d.reference.trim().isNotEmpty) 'Ref: ${d.reference.trim()}',
+      if (d.inspector.trim().isNotEmpty) 'By: ${d.inspector.trim()}',
+    ].join('   ');
+    if (refLine.isNotEmpty) lines.add(refLine);
     final addr = d.address?.trim();
     if (addr != null && addr.isNotEmpty) lines.add(addr);
     if (d.hasFix) {

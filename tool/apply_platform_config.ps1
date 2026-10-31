@@ -28,7 +28,8 @@ if (Test-Path 'pubspec.yaml') {
             @('url_launcher', '^6.3.0'),
             @('in_app_purchase', '^3.2.0'),
             @('share_plus', '^13.3.1'),
-            @('pdf', '^3.11.0')
+            @('pdf', '^3.11.0'),
+            @('google_mobile_ads', '^5.3.0')
         )
         foreach ($d in $deps) {
             if ($c -notmatch "(?m)^[ \t]+$($d[0]):") {

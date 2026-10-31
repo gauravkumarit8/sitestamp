@@ -1,13 +1,18 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/library_item.dart';
+import '../models/stamp_data.dart';
+import '../services/ads_service.dart';
 import '../services/billing_service.dart';
+import '../services/collage_service.dart';
 import '../services/entitlements.dart';
 import '../services/export_service.dart';
 import '../services/photo_library.dart';
+import '../widgets/ad_banner.dart';
 import 'photo_preview_screen.dart';
 import 'pro_screen.dart';
 
@@ -41,6 +46,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   void initState() {
     super.initState();
     widget.library.addListener(_reload);
+    if (widget.entitlements.showAds) AdsService.instance.loadRewarded();
     _reload();
   }
 
@@ -145,8 +151,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Future<void> _export(_ExportKind kind) async {
     if (!widget.entitlements.canExport) {
-      _openPro();
-      return;
+      final allowed = await _unlockExportOnce();
+      if (!allowed) return;
     }
     final items = _targets;
     if (items.isEmpty) {
@@ -203,6 +209,103 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  /// Free users: watch one rewarded ad to export once, or go Pro.
+  Future<bool> _unlockExportOnce() async {
+    final adAvailable =
+        widget.entitlements.showAds && AdsService.instance.rewardedAvailable;
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Export is a Pro feature'),
+        content: Text(
+          adAvailable
+              ? 'Watch a short ad to export once, or upgrade to Pro for '
+                  'unlimited exports and no ads.'
+              : 'Upgrade to Pro for unlimited PDF and CSV exports and no ads.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop('cancel'),
+            child: const Text('Not now'),
+          ),
+          if (adAvailable)
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop('ad'),
+              child: const Text('Watch ad'),
+            ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop('pro'),
+            child: const Text('Upgrade'),
+          ),
+        ],
+      ),
+    );
+    if (choice == 'pro') {
+      _openPro();
+      return false;
+    }
+    if (choice != 'ad') return false;
+    final earned = await AdsService.instance.showRewarded();
+    if (!earned) _toast('No reward earned. Try again or upgrade to Pro.');
+    return earned;
+  }
+
+  Future<void> _makeCollage() async {
+    if (!widget.entitlements.canMakeCollage) {
+      _openPro();
+      return;
+    }
+    final picked = _all.where((i) => _selected.contains(i.id)).toList();
+    if (picked.length != 2) {
+      _toast('Select exactly 2 photos: the Before and the After.');
+      return;
+    }
+    picked.sort((a, b) => a.data.time.compareTo(b.data.time));
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Expanded(child: Text('Building Before / After...')),
+          ],
+        ),
+      ),
+    );
+    String? path;
+    try {
+      path = await CollageService.build(
+        before: picked.first,
+        after: picked.last,
+      );
+    } catch (_) {}
+    if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    if (path == null) {
+      _toast('Could not build the Before / After image.');
+      return;
+    }
+    try {
+      await Gal.putImage(
+        path,
+        album: StampData.albumFor(picked.last.data.project),
+      );
+    } catch (_) {}
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          subject: 'Before / After',
+          text: 'Before / After\n${picked.last.toSavedPhoto().shareText}',
+          files: [XFile(path, mimeType: 'image/jpeg')],
+        ),
+      );
+    } catch (_) {
+      _toast('Saved to your gallery. Could not open the share sheet.');
+    }
+  }
+
   void _openPro() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -240,6 +343,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
               icon: const Icon(Icons.share),
               tooltip: 'Share',
               onPressed: _shareSelected,
+            ),
+            IconButton(
+              icon: Icon(
+                widget.entitlements.canMakeCollage
+                    ? Icons.compare
+                    : Icons.lock_outline,
+              ),
+              tooltip: 'Before / After image',
+              onPressed: _makeCollage,
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
@@ -297,6 +409,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           itemBuilder: (context, index) => _cell(items[index]),
                         ),
                 ),
+                Center(child: AdBanner(entitlements: widget.entitlements)),
                 if (!widget.entitlements.isPro)
                   const Padding(
                     padding: EdgeInsets.fromLTRB(16, 4, 16, 12),

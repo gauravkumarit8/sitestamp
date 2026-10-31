@@ -276,6 +276,15 @@ class _CameraScreenState extends State<CameraScreen>
         branding: widget.entitlements.showBranding,
         locationMode: widget.settings.locationMode,
         project: widget.entitlements.canUseProjects ? widget.settings.project : '',
+        company: widget.entitlements.canUseStampText
+            ? widget.settings.companyName
+            : '',
+        reference: widget.entitlements.canUseStampText
+            ? widget.settings.reference
+            : '',
+        inspector: widget.entitlements.canUseStampText
+            ? widget.settings.inspector
+            : '',
         time: DateTime.now(),
         memo: _memo.text.trim(),
         address: (_addressEnabled && fix != null)
@@ -605,6 +614,9 @@ class _CameraScreenState extends State<CameraScreen>
       address: widget.settings.showAddress ? 'Sample Street, City, State' : null,
       locationMode: widget.settings.locationMode,
       project: pro ? widget.settings.project : '',
+      company: pro ? widget.settings.companyName : '',
+      reference: pro ? widget.settings.reference : '',
+      inspector: pro ? widget.settings.inspector : '',
       branding: !pro,
     ).toLines();
   }
@@ -701,6 +713,63 @@ class _CameraScreenState extends State<CameraScreen>
     );
   }
 
+  Future<void> _editStampText() async {
+    final st = widget.settings;
+    final company = TextEditingController(text: st.companyName);
+    final reference = TextEditingController(text: st.reference);
+    final inspector = TextEditingController(text: st.inspector);
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Company and job details'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: company,
+                maxLength: 40,
+                decoration: const InputDecoration(labelText: 'Company name'),
+              ),
+              TextField(
+                controller: reference,
+                maxLength: 30,
+                decoration: const InputDecoration(labelText: 'Job / reference no.'),
+              ),
+              TextField(
+                controller: inspector,
+                maxLength: 30,
+                decoration: const InputDecoration(labelText: 'Inspector name'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (saved == true) {
+      await st.setStampText(
+        company: company.text,
+        reference: reference.text,
+        inspector: inspector.text,
+      );
+    }
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      company.dispose();
+      reference.dispose();
+      inspector.dispose();
+    });
+  }
+
   Future<void> _newProjectDialog() async {
     final controller = TextEditingController();
     final name = await showDialog<String>(
@@ -725,7 +794,7 @@ class _CameraScreenState extends State<CameraScreen>
         ],
       ),
     );
-    controller.dispose();
+    Future<void>.delayed(const Duration(milliseconds: 500), controller.dispose);
     if (name != null && name.trim().isNotEmpty) {
       await widget.settings.addProject(name);
     }
@@ -879,8 +948,8 @@ class _CameraScreenState extends State<CameraScreen>
                               const SizedBox(width: 6),
                             ],
                             Text(pro
-                                ? 'Stamp position and size'
-                                : 'Stamp position and size (Pro)'),
+                                ? 'Stamp position, size and theme'
+                                : 'Stamp position, size and theme (Pro)'),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -923,8 +992,47 @@ class _CameraScreenState extends State<CameraScreen>
                               ? (s) => widget.settings.setStampSize(s.first)
                               : null,
                         ),
+                        const SizedBox(height: 8),
+                        SegmentedButton<StampTheme>(
+                          showSelectedIcon: false,
+                          segments: [
+                            for (final t in StampTheme.values)
+                              ButtonSegment(value: t, label: Text(t.label)),
+                          ],
+                          selected: {widget.settings.stampStyle.theme},
+                          onSelectionChanged: pro
+                              ? (s) => widget.settings.setStampTheme(s.first)
+                              : null,
+                        ),
                       ],
                     ),
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      pro ? Icons.business_outlined : Icons.lock_outline,
+                    ),
+                    title: const Text('Company and job details'),
+                    subtitle: Text(
+                      pro
+                          ? (widget.settings.companyName.isEmpty &&
+                                  widget.settings.reference.isEmpty &&
+                                  widget.settings.inspector.isEmpty
+                              ? 'Print your company, job no. and inspector on every photo.'
+                              : [
+                                  widget.settings.companyName,
+                                  widget.settings.reference,
+                                  widget.settings.inspector,
+                                ].where((e) => e.isNotEmpty).join('  |  '))
+                          : 'Pro: print your company, job no. and inspector on every photo.',
+                    ),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      if (pro) {
+                        _editStampText();
+                      } else {
+                        _openProScreen();
+                      }
+                    },
                   ),
                   SwitchListTile(
                     title: const Text('Grid lines'),
@@ -937,10 +1045,11 @@ class _CameraScreenState extends State<CameraScreen>
                     title: Text(pro ? 'SiteStamp Pro' : 'Upgrade to SiteStamp Pro'),
                     subtitle: Text(
                       pro
-                          ? 'No branding, projects, stamp styles, PDF/CSV export.'
-                          : 'Remove the "Made with SiteStamp" line, organise '
-                              'photos by project, style the stamp and export '
-                              'PDF/CSV reports.',
+                          ? 'No ads, no branding, company details, themes, '
+                              'projects, Before/After and export.'
+                          : 'No ads, no "Made with SiteStamp" line, your '
+                              'company details on every photo, themes, '
+                              'projects, Before/After images and PDF/CSV export.',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {

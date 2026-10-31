@@ -34,7 +34,7 @@ DESIGNED TO BE RELIABLE
 - Images are resized for fast saving and low memory use
 
 PRIVACY
-SiteStamp has no account and no ads. Your photos and notes stay on your device. The optional address lookup uses your phone's location service. See the privacy policy for details.
+SiteStamp needs no account. Your photos and notes stay on your device. The free version shows a small ad on the photo list screen, never on the camera; Pro removes all ads. The place-name lookup uses your phone's location service. See the privacy policy for details.
 
 PLEASE NOTE
 GPS accuracy depends on your device and surroundings and can be weaker indoors. A stamped photo is a helpful record, but it is not a tamper-proof or legally certified document.
@@ -62,7 +62,8 @@ Privacy policy URL: https://gauravkumarit8.github.io/sitestamp/privacy-policy.ht
   The optional address lookup sends coordinates to the device's geocoding
   provider (Google on most Android phones). Declare this conservatively.
 - Photos: created and saved on the device only; not sent to us.
-- No ads, no analytics, no accounts, no data sold.
+- Ads: the free version shows Google AdMob ads (banner on the photo list, optional rewarded ad). Declare the AdMob SDK data (advertising ID, approximate location/IP, diagnostics) per Google's AdMob data-disclosure guide.
+- No analytics, no accounts, no data sold.
 - Data is not shared with third parties by the developer.
 - Users can turn off the address lookup in Settings.
 
@@ -70,4 +71,4 @@ Privacy policy URL: https://gauravkumarit8.github.io/sitestamp/privacy-policy.ht
 - Target audience: 18+ (not designed for children)
 - Content rating questionnaire: no violence, no user-generated content sharing
 - Foreground location only (no background location declaration needed)
-- Contains ads: No
+- Contains ads: YES (also declare Advertising ID use under App content)

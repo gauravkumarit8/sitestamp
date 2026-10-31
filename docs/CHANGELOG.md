@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.0
+- Pro value: company name, job/reference no. and inspector on every photo; stamp themes (Classic/Bright/Light); Before/After comparison images from two photos; ad-free
+- Ads for free users (Google AdMob): small banner on the Photos screen only, plus an optional rewarded ad to export once. NEVER on the camera screen. Pro removes all ads. Test ad ids until you replace them (docs/ADS.md)
+- Consent (UMP) flow for EEA/UK users
+- FIX: Plus Codes like "489X+796" are no longer printed as the place name
+- CSV export has company/reference/inspector columns
+
 ## v0.9.2
 - Test fix: entitlements test now expects the free place name and checks Pro-only flags
 - Lint/analyze cleanup: remove unneeded `!`, unneeded cross_file imports, add braces
