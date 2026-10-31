@@ -132,4 +132,31 @@ void main() {
     );
     expect(photo.shareText.contains('maps.google.com'), isFalse);
   });
+
+  test('location mode: name replaces coordinates, falls back when no name', () {
+    StampData make(StampLocationMode m, {String? address}) => StampData(
+          time: DateTime(2026, 1, 2, 3, 4, 5),
+          memo: '',
+          latitude: 26.1,
+          longitude: 85.3,
+          accuracy: 10,
+          address: address,
+          locationMode: m,
+        );
+    final nameOnly = make(StampLocationMode.addressFirst, address: 'Station Rd, Muzaffarpur').toLines();
+    expect(nameOnly.any((l) => l.startsWith('Lat ')), isFalse);
+    expect(nameOnly, contains('Station Rd, Muzaffarpur'));
+    expect(nameOnly.any((l) => l.contains('Accuracy')), isTrue);
+
+    final fallback = make(StampLocationMode.addressFirst).toLines();
+    expect(fallback.any((l) => l.startsWith('Lat ')), isTrue);
+
+    final both = make(StampLocationMode.both, address: 'Station Rd').toLines();
+    expect(both, contains('Station Rd'));
+    expect(both.any((l) => l.startsWith('Lat ')), isTrue);
+
+    final gps = make(StampLocationMode.coordinatesOnly, address: 'Station Rd').toLines();
+    expect(gps, isNot(contains('Station Rd')));
+    expect(gps.any((l) => l.startsWith('Lat ')), isTrue);
+  });
 }

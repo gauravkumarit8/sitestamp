@@ -274,6 +274,7 @@ class _CameraScreenState extends State<CameraScreen>
       final fix = _location.freshFix();
       final data = _location.snapshot(
         branding: widget.entitlements.showBranding,
+        locationMode: widget.settings.locationMode,
         project: widget.entitlements.canUseProjects ? widget.settings.project : '',
         time: DateTime.now(),
         memo: _memo.text.trim(),
@@ -332,6 +333,7 @@ class _CameraScreenState extends State<CameraScreen>
       backgroundColor: Colors.black,
       resizeToAvoidBottomInset: false,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           Positioned.fill(
             child: LayoutBuilder(
@@ -383,32 +385,46 @@ class _CameraScreenState extends State<CameraScreen>
               ),
             ),
           ),
-          // Top bar
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      heightFactor: 1.0,
-                      child: GpsStatusPill(
-                        location: _location,
-                        onTap: _onPillTap,
+          // Top bar: pinned to the top so it can never stretch the Stack
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        heightFactor: 1.0,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GpsStatusPill(
+                              location: _location,
+                              onTap: _onPillTap,
+                            ),
+                            _buildPlaceLabel(),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  _RoundButton(icon: _flashIcon, onTap: _cycleFlash),
-                  const SizedBox(width: 8),
-                  _RoundButton(
-                    icon: Icons.cameraswitch_outlined,
-                    onTap: _switchCamera,
-                  ),
-                  const SizedBox(width: 8),
-                  _RoundButton(icon: Icons.tune, onTap: _openSettings),
-                ],
+                    const SizedBox(width: 8),
+                    _RoundButton(icon: _flashIcon, onTap: _cycleFlash),
+                    const SizedBox(width: 8),
+                    _RoundButton(
+                      icon: Icons.cameraswitch_outlined,
+                      onTap: _switchCamera,
+                    ),
+                    const SizedBox(width: 8),
+                    _RoundButton(icon: Icons.tune, onTap: _openSettings),
+                  ],
+                ),
               ),
             ),
           ),
@@ -497,6 +513,31 @@ class _CameraScreenState extends State<CameraScreen>
     );
   }
 
+  Widget _buildPlaceLabel() {
+    return ValueListenableBuilder<String?>(
+      valueListenable: _address.current,
+      builder: (context, value, _) {
+        if (value == null || !_addressEnabled) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 4, left: 4),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 230),
+            child: Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _openLibrary() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -561,7 +602,8 @@ class _CameraScreenState extends State<CameraScreen>
       longitude: fix?.longitude ?? 77.2090,
       altitude: fix?.altitude ?? 215,
       accuracy: fix?.accuracy ?? 5,
-      address: pro ? 'Sample Street, City' : null,
+      address: widget.settings.showAddress ? 'Sample Street, City, State' : null,
+      locationMode: widget.settings.locationMode,
       project: pro ? widget.settings.project : '',
       branding: !pro,
     ).toLines();
@@ -780,18 +822,36 @@ class _CameraScreenState extends State<CameraScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SwitchListTile(
-                    secondary: pro ? null : const Icon(Icons.lock_outline),
-                    title: const Text('Show address on photo'),
-                    subtitle: Text(
-                      pro
-                          ? 'Looks up the street address (needs internet). '
-                              'Photos are still stamped with GPS if it fails.'
-                          : 'Pro feature.',
+                    title: const Text('Show place name on photo'),
+                    subtitle: const Text(
+                      'Looks up the street address (needs internet). If it '
+                      'fails, the photo is stamped with GPS coordinates instead.',
                     ),
-                    value: pro && widget.settings.showAddress,
-                    onChanged: pro
-                        ? (v) => widget.settings.setShowAddress(v)
-                        : null,
+                    value: widget.settings.showAddress,
+                    onChanged: (v) => widget.settings.setShowAddress(v),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: SegmentedButton<StampLocationMode>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(
+                          value: StampLocationMode.addressFirst,
+                          label: Text('Name'),
+                        ),
+                        ButtonSegment(
+                          value: StampLocationMode.both,
+                          label: Text('Name + GPS'),
+                        ),
+                        ButtonSegment(
+                          value: StampLocationMode.coordinatesOnly,
+                          label: Text('GPS only'),
+                        ),
+                      ],
+                      selected: {widget.settings.locationMode},
+                      onSelectionChanged: (s) =>
+                          widget.settings.setLocationMode(s.first),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -877,9 +937,10 @@ class _CameraScreenState extends State<CameraScreen>
                     title: Text(pro ? 'SiteStamp Pro' : 'Upgrade to SiteStamp Pro'),
                     subtitle: Text(
                       pro
-                          ? 'No branding, address on photos, 10 saved notes.'
-                          : 'Remove the "Made with SiteStamp" line, add the '
-                              'street address, and keep 10 saved notes.',
+                          ? 'No branding, projects, stamp styles, PDF/CSV export.'
+                          : 'Remove the "Made with SiteStamp" line, organise '
+                              'photos by project, style the stamp and export '
+                              'PDF/CSV reports.',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {

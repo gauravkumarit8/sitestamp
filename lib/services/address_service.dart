@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -8,6 +9,9 @@ class AddressService {
   static const double _refreshMeters = 50;
   static const double _maxUseMeters = 150;
   static const Duration _retryGap = Duration(seconds: 20);
+
+  /// Latest resolved place name (for the on-screen label).
+  final ValueNotifier<String?> current = ValueNotifier<String?>(null);
 
   double? _lat;
   double? _lon;
@@ -55,6 +59,7 @@ class AddressService {
       ]);
       if (text.isNotEmpty) {
         _address = text;
+        current.value = text;
         _lat = p.latitude;
         _lon = p.longitude;
       }
@@ -76,5 +81,6 @@ class AddressService {
 
   void dispose() {
     _disposed = true;
+    current.dispose();
   }
 }

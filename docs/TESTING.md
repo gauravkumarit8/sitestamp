@@ -36,6 +36,10 @@ Phone model + Android version: ______________________
 | 27 | Free: Export shows lock and opens the Pro screen | |
 | 28 | Settings: stamp preview changes with position and size | |
 
+| 29 | Camera screen fills the whole screen: preview behind, top bar at top, note field + shutter at bottom | |
+| 30 | Settings: Name / Name + GPS / GPS only changes the stamp preview; place name appears under the GPS pill after a few seconds (needs internet) | |
+| 31 | Photo shows the place name instead of Lat/Lon (and falls back to Lat/Lon in airplane mode) | |
+
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a
 crash, also send the Build run link and, if you can, `adb logcat` output.

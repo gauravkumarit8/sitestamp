@@ -24,8 +24,9 @@ class Entitlements extends ChangeNotifier {
   bool get isPurchasedPro => _purchasedPro;
 
   // ---- The free / Pro split ----
-  /// Street address on the stamp.
-  bool get canShowAddress => isPro;
+  /// Place name / street address on the stamp. Free for everyone because it is
+  /// the most requested feature; set to `isPro` to make it a Pro feature again.
+  bool get canShowAddress => true;
 
   /// Small "Made with SiteStamp" line on free photos.
   bool get showBranding => !isPro;

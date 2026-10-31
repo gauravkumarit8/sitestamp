@@ -1,3 +1,5 @@
+import 'stamp_style.dart';
+
 /// Everything that gets printed on the photo. Pure Dart so it is unit-testable.
 class StampData {
   const StampData({
@@ -11,6 +13,7 @@ class StampData {
     this.address,
     this.branding = false,
     this.project = '',
+    this.locationMode = StampLocationMode.both,
   });
 
   final DateTime time;
@@ -23,6 +26,7 @@ class StampData {
   final String? address;
   final bool branding;
   final String project;
+  final StampLocationMode locationMode;
 
   bool get hasFix => latitude != null && longitude != null;
 
@@ -106,10 +110,17 @@ class StampData {
     if (proj.isNotEmpty) lines.add('Project: $proj');
     if (hasFix) {
       final addr = address?.trim();
-      if (addr != null && addr.isNotEmpty) lines.add(addr);
-      lines.add(
-        'Lat ${latitude!.toStringAsFixed(6)}  Lon ${longitude!.toStringAsFixed(6)}',
-      );
+      final hasAddr = addr != null && addr.isNotEmpty;
+      final showAddr = hasAddr && locationMode != StampLocationMode.coordinatesOnly;
+      // Coordinates are shown unless a place name replaces them.
+      final showCoords =
+          !showAddr || locationMode == StampLocationMode.both;
+      if (showAddr) lines.add(addr!);
+      if (showCoords) {
+        lines.add(
+          'Lat ${latitude!.toStringAsFixed(6)}  Lon ${longitude!.toStringAsFixed(6)}',
+        );
+      }
       final parts = <String>[];
       if (altitude != null) parts.add('Alt ${altitude!.round()} m');
       if (accuracy != null) parts.add('Accuracy ±${accuracy!.round()} m');

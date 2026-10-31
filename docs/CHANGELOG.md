@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.9.1
+- FIX: camera screen collapsed into a strip at the top (Stack shrank to the top bar's height). Stack now fills the screen and the top bar is pinned with Positioned
+- Place name on the photo: new setting "Name / Name + GPS / GPS only" (default: Name). If no name is available the photo falls back to GPS coordinates
+- Place name is now FREE for everyone (Entitlements.canShowAddress); Pro value is projects, stamp style, export, unlimited list, no branding
+- Resolved place name is shown under the GPS pill on the camera screen
+- Pro screen and settings text updated for the new split
+
 ## v0.9.0
 - FIX: top bar (GPS pill, flash, switch, settings) was vertically centred on screen and overlapped the shutter when the keyboard opened; it is now pinned to the top
 - FIX: share_plus ^13.3.1 (11/12 conflicted with geolocator 14 over win32)

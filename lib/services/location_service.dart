@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/stamp_data.dart';
+import '../models/stamp_style.dart';
 
 /// Keeps a live GPS stream open so a fix is ready before the shutter is tapped.
 class LocationService {
@@ -57,6 +58,7 @@ class LocationService {
     String? address,
     bool branding = false,
     String project = '',
+    StampLocationMode locationMode = StampLocationMode.both,
   }) {
     final p = freshFix();
     return StampData(
@@ -70,6 +72,7 @@ class LocationService {
       address: p == null ? null : address,
       branding: branding,
       project: project,
+      locationMode: locationMode,
     );
   }
 

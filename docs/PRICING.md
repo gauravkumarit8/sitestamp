@@ -11,7 +11,7 @@ starting hypothesis to test, not a fact about the market.
 | Front/back camera, flash | yes | yes |
 | "Made with SiteStamp" line | yes | no |
 | Recent-note chips | 3 | 10 |
-| Street address on photo | no | yes |
+| Place name / street address on photo | yes | yes |
 | Projects (one gallery album per job) | no | yes |
 | Stamp position and size | no | yes |
 | Photos kept in the in-app list | latest 50 | unlimited |

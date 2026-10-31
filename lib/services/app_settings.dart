@@ -14,6 +14,7 @@ class AppSettings extends ChangeNotifier {
   static const String _kProject = 'current_project';
   static const String _kStampPos = 'stamp_position';
   static const String _kStampSize = 'stamp_size';
+  static const String _kLocationMode = 'location_mode';
   static const int maxProjects = 30;
   static const int maxRecent = 10;
 
@@ -32,6 +33,7 @@ class AppSettings extends ChangeNotifier {
   List<String> _projects = <String>[];
   String _project = '';
   StampStyle _style = const StampStyle();
+  StampLocationMode _locationMode = StampLocationMode.addressFirst;
 
   bool get showAddress => _showAddress;
   bool get showGrid => _showGrid;
@@ -39,6 +41,7 @@ class AppSettings extends ChangeNotifier {
   List<String> get projects => List.unmodifiable(_projects);
   String get project => _project;
   StampStyle get stampStyle => _style;
+  StampLocationMode get locationMode => _locationMode;
 
   static Future<AppSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -54,6 +57,10 @@ class AppSettings extends ChangeNotifier {
     final size = (prefs.getInt(_kStampSize) ?? 1)
         .clamp(0, StampSize.values.length - 1)
         .toInt();
+    final mode = (prefs.getInt(_kLocationMode) ?? 0)
+        .clamp(0, StampLocationMode.values.length - 1)
+        .toInt();
+    s._locationMode = StampLocationMode.values[mode];
     s._style = StampStyle(
       position: StampPosition.values[pos],
       size: StampSize.values[size],
@@ -107,6 +114,12 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
     await _prefs.setStringList(_kProjects, _projects);
     await _prefs.setString(_kProject, _project);
+  }
+
+  Future<void> setLocationMode(StampLocationMode mode) async {
+    _locationMode = mode;
+    notifyListeners();
+    await _prefs.setInt(_kLocationMode, mode.index);
   }
 
   Future<void> setStampPosition(StampPosition p) async {
