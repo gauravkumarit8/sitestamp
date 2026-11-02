@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.0 - Trust pack
+- Job-site geofence per project (Pro): set the site from your current position with a 50-500 m radius; chip shows "On site" / distance; the photo prints "On site" or "WARNING: x m from job site"
+- Clock check: warns when the phone time differs from GPS time by over 5 minutes
+- Sticky fake-GPS flag: one mock fix flags photos for the next 10 minutes
+- Photo ID (SS-XXXXXXXX) printed on every photo; SHA-256 fingerprint of each saved photo kept in the app and exported
+- CSV: photo_id, sha256, clock_check, site_status, site_distance_m columns
+- docs: ROADMAP.md, TEAMS_PLAN.md, teams/schema.sql (draft)
+
 ## v1.0.0
 - Pro value: company name, job/reference no. and inspector on every photo; stamp themes (Classic/Bright/Light); Before/After comparison images from two photos; ad-free
 - Ads for free users (Google AdMob): small banner on the Photos screen only, plus an optional rewarded ad to export once. NEVER on the camera screen. Pro removes all ads. Test ad ids until you replace them (docs/ADS.md)

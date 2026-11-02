@@ -10,6 +10,7 @@ import '../models/stamp_style.dart';
 class LocationService {
   StreamSubscription<Position>? _sub;
   DateTime? _receivedAt;
+  DateTime? _lastMockAt;
 
   final ValueNotifier<Position?> latest = ValueNotifier<Position?>(null);
   final ValueNotifier<bool> serviceEnabled = ValueNotifier<bool>(true);
@@ -25,6 +26,7 @@ class LocationService {
     ).listen(
       (p) {
         _receivedAt = DateTime.now();
+        if (p.isMocked) _lastMockAt = _receivedAt;
         serviceEnabled.value = true;
         latest.value = p;
       },
@@ -52,6 +54,21 @@ class LocationService {
     return DateTime.now().difference(at) <= maxAge ? p : null;
   }
 
+  /// True if any fix in the last 10 minutes was flagged as mock/fake.
+  bool get mockSeenRecently {
+    final at = _lastMockAt;
+    return at != null && DateTime.now().difference(at) < const Duration(minutes: 10);
+  }
+
+  /// True if the phone clock differs from the GPS fix time by over 5 minutes.
+  bool get clockMismatch {
+    final p = freshFix();
+    if (p == null) return false;
+    final DateTime? ts = p.timestamp;
+    if (ts == null) return false;
+    return DateTime.now().difference(ts).abs() > const Duration(minutes: 5);
+  }
+
   StampData snapshot({
     required DateTime time,
     required String memo,
@@ -62,6 +79,9 @@ class LocationService {
     String company = '',
     String reference = '',
     String inspector = '',
+    String photoId = '',
+    double? siteDistanceM,
+    double? siteRadiusM,
   }) {
     final p = freshFix();
     return StampData(
@@ -71,7 +91,11 @@ class LocationService {
       longitude: p?.longitude,
       altitude: p?.altitude,
       accuracy: p?.accuracy,
-      isMocked: p?.isMocked ?? false,
+      isMocked: (p?.isMocked ?? false) || mockSeenRecently,
+      clockMismatch: clockMismatch,
+      photoId: photoId,
+      siteDistanceM: siteDistanceM,
+      siteRadiusM: siteRadiusM,
       address: p == null ? null : address,
       branding: branding,
       project: project,

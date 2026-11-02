@@ -39,6 +39,9 @@ class Entitlements extends ChangeNotifier {
   /// Company name, job reference and inspector name printed on the stamp.
   bool get canUseStampText => isPro;
 
+  /// Job-site geofence per project (flags photos taken away from the site).
+  bool get canUseGeofence => isPro;
+
   /// Before/After comparison images.
   bool get canMakeCollage => isPro;
 

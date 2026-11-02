@@ -49,9 +49,12 @@ class _GpsStatusPillState extends State<GpsStatusPill> {
         } else if (fix == null) {
           color = const Color(0xFFFB8C00);
           label = 'Acquiring GPS...';
-        } else if (fix.isMocked) {
+        } else if (fix.isMocked || loc.mockSeenRecently) {
           color = const Color(0xFFE53935);
           label = 'Mock location detected';
+        } else if (loc.clockMismatch) {
+          color = const Color(0xFFFB8C00);
+          label = 'Device clock differs from GPS';
         } else if (fix.accuracy > 50) {
           color = const Color(0xFFFB8C00);
           label = 'GPS weak (±${fix.accuracy.round()} m)';

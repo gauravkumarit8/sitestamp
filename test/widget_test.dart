@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sitestamp/models/photo_id.dart';
 import 'package:sitestamp/models/saved_photo.dart';
+import 'package:sitestamp/models/site_location.dart';
 import 'package:sitestamp/models/stamp_data.dart';
 import 'package:sitestamp/models/stamp_style.dart';
 import 'package:sitestamp/services/address_service.dart';
@@ -199,5 +201,56 @@ void main() {
       AddressService.joinParts(['489X+796', 'Muzaffarpur', 'Bihar', '843113']),
       'Muzaffarpur, Bihar, 843113',
     );
+  });
+
+  test('photo ids look right and are unique-ish', () {
+    final ids = {for (var i = 0; i < 200; i++) PhotoId.generate()};
+    expect(ids.length, 200);
+    expect(ids.every(PhotoId.isValid), isTrue);
+    expect(PhotoId.isValid('SS-00000000'), isFalse); // no 0/O
+    expect(PhotoId.isValid('XX-ABCDEFGH'), isFalse);
+  });
+
+  test('site distance and radius', () {
+    const site = SiteLocation(lat: 26.1189, lon: 85.3487, radius: 100);
+    expect(site.distanceTo(26.1189, 85.3487), lessThan(1));
+    // ~0.001 deg of latitude is about 111 m
+    final d = site.distanceTo(26.1199, 85.3487);
+    expect(d, inInclusiveRange(105, 118));
+    expect(site.contains(26.1192, 85.3487), isTrue);
+    expect(site.contains(26.1199, 85.3487), isFalse);
+    final back = SiteLocation.fromJson(site.toJson());
+    expect(back.radius, 100);
+    expect(back.lat, 26.1189);
+  });
+
+  test('stamp shows site status, clock warning and photo id', () {
+    StampData make({double? dist, bool clock = false}) => StampData(
+          time: DateTime(2026, 1, 2, 3, 4, 5),
+          memo: '',
+          latitude: 1,
+          longitude: 2,
+          siteDistanceM: dist,
+          siteRadiusM: dist == null ? null : 100,
+          clockMismatch: clock,
+          photoId: 'SS-ABCDEFGH',
+        );
+    final on = make(dist: 35).toLines();
+    expect(on, contains('On site (35 m from site point)'));
+    expect(on, contains('ID: SS-ABCDEFGH'));
+    expect(make(dist: 35).siteStatus, 'on_site');
+
+    final out = make(dist: 640).toLines();
+    expect(out, contains('WARNING: 640 m from job site'));
+    expect(make(dist: 1500).toLines(), contains('WARNING: 1.5 km from job site'));
+    expect(make(dist: 640).siteStatus, 'outside');
+
+    expect(make(clock: true).toLines(),
+        contains('WARNING: device clock differs from GPS time'));
+    expect(make().siteStatus, '');
+    final back = StampData.fromJson(make(dist: 640, clock: true).toJson());
+    expect(back.photoId, 'SS-ABCDEFGH');
+    expect(back.clockMismatch, isTrue);
+    expect(back.siteDistanceM, 640);
   });
 }

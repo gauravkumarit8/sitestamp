@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:gal/gal.dart';
@@ -91,12 +92,16 @@ class StampService {
       // 5. Save to the public gallery.
       await Gal.putImage(out.path, album: album ?? StampData.albumFor(data.project));
 
+      // Fingerprint of exactly what was saved (recorded with the photo).
+      final digest = sha256.convert(await File(out.path).readAsBytes());
+
       // 6. Keep an app-private copy for the in-app list, sharing and export.
       if (library == null) return null;
       return await library.add(
         sourcePath: out.path,
         data: data,
         maxCount: libraryLimit,
+        sha256: digest.toString(),
       );
     } finally {
       // 7. Always clean temp files.

@@ -10,7 +10,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
+import '../models/photo_id.dart';
 import '../models/saved_photo.dart';
+import '../models/site_location.dart';
 import '../models/stamp_data.dart';
 import '../models/stamp_style.dart';
 import '../services/address_service.dart';
@@ -272,7 +274,18 @@ class _CameraScreenState extends State<CameraScreen>
 
       // Snapshot GPS + time at the moment of the tap.
       final fix = _location.freshFix();
+      final activeProject =
+          widget.entitlements.canUseProjects ? widget.settings.project : '';
+      final site = (widget.entitlements.canUseGeofence && activeProject.isNotEmpty)
+          ? widget.settings.siteFor(activeProject)
+          : null;
+      final double? siteDistance = (site != null && fix != null)
+          ? site.distanceTo(fix.latitude, fix.longitude)
+          : null;
       final data = _location.snapshot(
+        photoId: PhotoId.generate(),
+        siteDistanceM: siteDistance,
+        siteRadiusM: site?.radius,
         branding: widget.entitlements.showBranding,
         locationMode: widget.settings.locationMode,
         project: widget.entitlements.canUseProjects ? widget.settings.project : '',
@@ -623,11 +636,27 @@ class _CameraScreenState extends State<CameraScreen>
 
   Widget _buildProjectChip() {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.settings, widget.entitlements]),
+      animation: Listenable.merge([
+        widget.settings,
+        widget.entitlements,
+        _location.latest,
+      ]),
       builder: (context, _) {
         final pro = widget.entitlements.canUseProjects;
         final name = widget.settings.project;
-        final label = (pro && name.isNotEmpty) ? name : 'SiteStamp album';
+        var label = (pro && name.isNotEmpty) ? name : 'SiteStamp album';
+        final site = (pro && name.isNotEmpty) ? widget.settings.siteFor(name) : null;
+        final fix = _location.freshFix();
+        if (site != null) {
+          if (fix == null) {
+            label += '  •  locating...';
+          } else {
+            final d = site.distanceTo(fix.latitude, fix.longitude);
+            label += d <= site.radius
+                ? '  •  On site'
+                : '  •  ${StampData.formatDistance(d)} away';
+          }
+        }
         return Align(
           alignment: Alignment.centerLeft,
           child: ActionChip(
@@ -685,11 +714,34 @@ class _CameraScreenState extends State<CameraScreen>
                             : Icons.radio_button_unchecked,
                       ),
                       title: Text(p),
-                      subtitle: Text(StampData.albumFor(p)),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Remove from list (photos stay in gallery)',
-                        onPressed: () => widget.settings.removeProject(p),
+                      subtitle: Text(
+                        widget.settings.siteFor(p) == null
+                            ? StampData.albumFor(p)
+                            : '${StampData.albumFor(p)}\nSite set, radius '
+                                '${widget.settings.siteFor(p)!.radius.round()} m',
+                      ),
+                      isThreeLine: widget.settings.siteFor(p) != null,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              widget.settings.siteFor(p) == null
+                                  ? Icons.add_location_alt_outlined
+                                  : Icons.edit_location_alt_outlined,
+                            ),
+                            tooltip: 'Set job site (geofence)',
+                            onPressed: () async {
+                              Navigator.of(ctx).pop();
+                              await _setSiteDialog(p);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            tooltip: 'Remove from list (photos stay in gallery)',
+                            onPressed: () => widget.settings.removeProject(p),
+                          ),
+                        ],
                       ),
                       onTap: () {
                         widget.settings.selectProject(p);
@@ -711,6 +763,79 @@ class _CameraScreenState extends State<CameraScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _setSiteDialog(String project) async {
+    final fix = _location.freshFix();
+    final existing = widget.settings.siteFor(project);
+    var radius = existing?.radius ?? 100.0;
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: Text('Job site for "$project"'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                fix == null
+                    ? 'Waiting for a GPS fix. Stand at the site and try again.'
+                    : 'Use my current position (±${fix.accuracy.round()} m) '
+                        'as the site point. Photos taken farther away than the '
+                        'radius are flagged on the photo.',
+              ),
+              if (existing != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Current site: ${existing.lat.toStringAsFixed(5)}, '
+                    '${existing.lon.toStringAsFixed(5)}  '
+                    '(${existing.radius.round()} m)',
+                  ),
+                ),
+              const SizedBox(height: 12),
+              const Text('Allowed radius'),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final r in const [50.0, 100.0, 200.0, 500.0])
+                    ChoiceChip(
+                      label: Text('${r.round()} m'),
+                      selected: radius == r,
+                      onSelected: (_) => setLocal(() => radius = r),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            if (existing != null)
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop('clear'),
+                child: const Text('Remove site'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop('cancel'),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: fix == null ? null : () => Navigator.of(ctx).pop('save'),
+              child: const Text('Set here'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == 'save' && fix != null) {
+      await widget.settings.setSite(
+        project,
+        SiteLocation(lat: fix.latitude, lon: fix.longitude, radius: radius),
+      );
+    } else if (result == 'clear') {
+      await widget.settings.setSite(project, null);
+    }
   }
 
   Future<void> _editStampText() async {

@@ -30,6 +30,7 @@ class SavedPhoto {
       lines.add('https://maps.google.com/?q=$lat,$lon');
     }
     if (d.memo.isNotEmpty) lines.add('Note: ${d.memo}');
+    if (d.photoId.isNotEmpty) lines.add('ID: ${d.photoId}');
     return lines.join('\n');
   }
 }

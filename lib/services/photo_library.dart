@@ -31,6 +31,7 @@ class PhotoLibrary extends ChangeNotifier {
     required String sourcePath,
     required StampData data,
     int? maxCount,
+    String sha256 = '',
   }) async {
     try {
       final dir = await _directory();
@@ -39,10 +40,13 @@ class PhotoLibrary extends ChangeNotifier {
       final imgPath = '${dir.path}/$id.jpg';
       await File(sourcePath).copy(imgPath);
       await File('${dir.path}/$id.json')
-          .writeAsString(jsonEncode(data.toJson()), flush: true);
+          .writeAsString(
+        jsonEncode({...data.toJson(), 'sha256': sha256}),
+        flush: true,
+      );
       if (maxCount != null) await prune(maxCount, notify: false);
       notifyListeners();
-      return LibraryItem(id: id, path: imgPath, data: data);
+      return LibraryItem(id: id, path: imgPath, data: data, sha256: sha256);
     } catch (_) {
       return null; // the gallery copy already exists; library is a bonus
     }
@@ -67,6 +71,7 @@ class PhotoLibrary extends ChangeNotifier {
             id: base.substring(base.lastIndexOf('/') + 1),
             path: img.path,
             data: StampData.fromJson(json),
+            sha256: (json['sha256'] as String?) ?? '',
           ),
         );
       } catch (_) {

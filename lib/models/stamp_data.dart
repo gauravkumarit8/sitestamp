@@ -17,6 +17,10 @@ class StampData {
     this.company = '',
     this.reference = '',
     this.inspector = '',
+    this.clockMismatch = false,
+    this.photoId = '',
+    this.siteDistanceM,
+    this.siteRadiusM,
   });
 
   final DateTime time;
@@ -33,6 +37,10 @@ class StampData {
   final String company;
   final String reference;
   final String inspector;
+  final bool clockMismatch;
+  final String photoId;
+  final double? siteDistanceM;
+  final double? siteRadiusM;
 
   bool get hasFix => latitude != null && longitude != null;
 
@@ -71,6 +79,19 @@ class StampData {
         '${_two(t.hour)}${_two(t.minute)}${_two(t.second)}.jpg';
   }
 
+  /// '' (no site set), 'on_site' or 'outside'.
+  String get siteStatus {
+    final d = siteDistanceM;
+    final r = siteRadiusM;
+    if (d == null || r == null) return '';
+    return d <= r ? 'on_site' : 'outside';
+  }
+
+  /// "35 m" or "1.2 km"
+  static String formatDistance(double meters) => meters < 1000
+      ? '${meters.round()} m'
+      : '${(meters / 1000).toStringAsFixed(1)} km';
+
   /// "UTC+05:30"
   static String tzLabel(DateTime t) {
     final off = t.timeZoneOffset;
@@ -98,6 +119,10 @@ class StampData {
         'company': company,
         'reference': reference,
         'inspector': inspector,
+        'clock': clockMismatch,
+        'photoId': photoId,
+        'siteDist': siteDistanceM,
+        'siteRad': siteRadiusM,
       };
 
   factory StampData.fromJson(Map<String, dynamic> j) => StampData(
@@ -114,6 +139,10 @@ class StampData {
         company: (j['company'] as String?) ?? '',
         reference: (j['reference'] as String?) ?? '',
         inspector: (j['inspector'] as String?) ?? '',
+        clockMismatch: (j['clock'] as bool?) ?? false,
+        photoId: (j['photoId'] as String?) ?? '',
+        siteDistanceM: (j['siteDist'] as num?)?.toDouble(),
+        siteRadiusM: (j['siteRad'] as num?)?.toDouble(),
       );
 
   List<String> toLines() {
@@ -148,10 +177,23 @@ class StampData {
       if (accuracy != null) parts.add('Accuracy ±${accuracy!.round()} m');
       if (parts.isNotEmpty) lines.add(parts.join('   '));
       if (isMocked) lines.add('WARNING: mock location detected');
+      if (clockMismatch) {
+        lines.add('WARNING: device clock differs from GPS time');
+      }
+      final sd = siteDistanceM;
+      final sr = siteRadiusM;
+      if (sd != null && sr != null) {
+        lines.add(
+          sd <= sr
+              ? 'On site (${formatDistance(sd)} from site point)'
+              : 'WARNING: ${formatDistance(sd)} from job site',
+        );
+      }
     } else {
       lines.add('GPS location unavailable');
     }
     if (memo.isNotEmpty) lines.add('Note: $memo');
+    if (photoId.isNotEmpty) lines.add('ID: $photoId');
     if (branding) lines.add('Made with SiteStamp');
     return lines;
   }

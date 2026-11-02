@@ -47,6 +47,11 @@ Phone model + Android version: ______________________
 | 36 | Pro: select 2 photos, tap compare icon: Before/After image is built, saved to gallery, share sheet opens | |
 | 37 | FRONT CAMERA, phone held upright: photo is upright (not sideways) | |
 
+| 38 | Pro: project > location icon > Set here; chip shows "On site"; walk 100+ m away and it shows distance | |
+| 39 | Photo taken outside the site prints "WARNING: ... from job site"; inside prints "On site" | |
+| 40 | Every photo has "ID: SS-XXXXXXXX"; CSV export has photo_id and sha256 | |
+| 41 | Change phone date/time manually: pill/photo show clock warning (needs a GPS fix) | |
+
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a
 crash, also send the Build run link and, if you can, `adb logcat` output.

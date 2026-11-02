@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/site_location.dart';
 import '../models/stamp_style.dart';
 
 /// Small persisted settings: address toggle and recent memos.
@@ -15,6 +18,7 @@ class AppSettings extends ChangeNotifier {
   static const String _kStampPos = 'stamp_position';
   static const String _kStampSize = 'stamp_size';
   static const String _kLocationMode = 'location_mode';
+  static const String _kSites = 'project_sites';
   static const String _kStampTheme = 'stamp_theme';
   static const String _kCompany = 'stamp_company';
   static const String _kReference = 'stamp_reference';
@@ -38,6 +42,7 @@ class AppSettings extends ChangeNotifier {
   String _project = '';
   StampStyle _style = const StampStyle();
   StampLocationMode _locationMode = StampLocationMode.addressFirst;
+  Map<String, SiteLocation> _sites = <String, SiteLocation>{};
   String _company = '';
   String _reference = '';
   String _inspector = '';
@@ -50,6 +55,7 @@ class AppSettings extends ChangeNotifier {
   StampStyle get stampStyle => _style;
   StampLocationMode get locationMode => _locationMode;
   String get companyName => _company;
+  SiteLocation? siteFor(String project) => _sites[project];
   String get reference => _reference;
   String get inspector => _inspector;
 
@@ -71,6 +77,16 @@ class AppSettings extends ChangeNotifier {
         .clamp(0, StampLocationMode.values.length - 1)
         .toInt();
     s._locationMode = StampLocationMode.values[mode];
+    try {
+      final raw = prefs.getString(_kSites);
+      if (raw != null && raw.isNotEmpty) {
+        final map = jsonDecode(raw) as Map<String, dynamic>;
+        s._sites = {
+          for (final e in map.entries)
+            e.key: SiteLocation.fromJson(e.value as Map<String, dynamic>),
+        };
+      }
+    } catch (_) {}
     s._company = prefs.getString(_kCompany) ?? '';
     s._reference = prefs.getString(_kReference) ?? '';
     s._inspector = prefs.getString(_kInspector) ?? '';
@@ -128,7 +144,9 @@ class AppSettings extends ChangeNotifier {
   Future<void> removeProject(String name) async {
     _projects = _projects.where((e) => e != name).toList();
     if (_project == name) _project = '';
+    _sites.remove(name);
     notifyListeners();
+    await _saveSites();
     await _prefs.setStringList(_kProjects, _projects);
     await _prefs.setString(_kProject, _project);
   }
@@ -137,6 +155,21 @@ class AppSettings extends ChangeNotifier {
     _locationMode = mode;
     notifyListeners();
     await _prefs.setInt(_kLocationMode, mode.index);
+  }
+
+  Future<void> _saveSites() => _prefs.setString(
+        _kSites,
+        jsonEncode({for (final e in _sites.entries) e.key: e.value.toJson()}),
+      );
+
+  Future<void> setSite(String project, SiteLocation? site) async {
+    if (site == null) {
+      _sites.remove(project);
+    } else {
+      _sites[project] = site;
+    }
+    notifyListeners();
+    await _saveSites();
   }
 
   Future<void> setStampTheme(StampTheme t) async {

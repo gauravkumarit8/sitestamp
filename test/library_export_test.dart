@@ -61,7 +61,8 @@ void main() {
     expect(csv.startsWith('\uFEFFfile_name,date_time,time_zone,project'), isTrue);
     final lines = csv.trim().split('\r\n');
     expect(lines.length, 3);
-    expect(lines.first.endsWith('mock_location,company,reference,inspector'), isTrue);
+    expect(lines.first.endsWith('mock_location,company,reference,inspector,'
+        'photo_id,sha256,clock_check,site_status,site_distance_m'), isTrue);
     expect(lines[1], contains('2026-01-02 03:04:05'));
     expect(lines[1], contains('Tower A,1.500000,2.500000,10,5'));
     expect(lines[1], contains('"a,b"'));
@@ -99,6 +100,7 @@ void main() {
     final src = File('${root.path}/src.jpg')..writeAsBytesSync([1, 2, 3]);
 
     Future<LibraryItem?> addAt(int sec) => lib.add(
+          sha256: 'abc$sec',
           sourcePath: src.path,
           data: StampData(
             time: DateTime(2026, 1, 1, 0, 0, sec),
@@ -113,6 +115,7 @@ void main() {
     var items = await lib.list();
     expect(items.length, 3);
     expect(items.first.data.memo, 'n3'); // newest first
+    expect(items.first.sha256, 'abc3');
 
     await lib.prune(2);
     items = await lib.list();

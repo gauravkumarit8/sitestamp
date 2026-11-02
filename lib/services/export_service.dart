@@ -44,6 +44,11 @@ class ExportService {
       'company',
       'reference',
       'inspector',
+      'photo_id',
+      'sha256',
+      'clock_check',
+      'site_status',
+      'site_distance_m',
     ];
     final rows = <String>[header.join(',')];
     for (final it in items) {
@@ -64,6 +69,11 @@ class ExportService {
           d.company,
           d.reference,
           d.inspector,
+          d.photoId,
+          it.sha256,
+          d.clockMismatch ? 'mismatch' : 'ok',
+          d.siteStatus,
+          d.siteDistanceM?.round().toString() ?? '',
         ].map(csvEscape).join(','),
       );
     }
@@ -93,7 +103,12 @@ class ExportService {
       if (d.hasFix)
         'Lat ${d.latitude!.toStringAsFixed(6)}  Lon ${d.longitude!.toStringAsFixed(6)}'
             '${d.accuracy != null ? '  (+/-${d.accuracy!.round()} m)' : ''}',
+      if (d.siteStatus == 'on_site') 'On site',
+      if (d.siteStatus == 'outside')
+        'OUTSIDE SITE: ${StampData.formatDistance(d.siteDistanceM!)} away',
+      if (d.clockMismatch) 'Clock check: MISMATCH',
       if (d.memo.isNotEmpty) 'Note: ${_clip(d.memo, 120)}',
+      if (d.photoId.isNotEmpty) 'ID: ${d.photoId}',
     ];
     return pdfSafe(lines.join('\n'));
   }

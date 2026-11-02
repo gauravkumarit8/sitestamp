@@ -20,6 +20,8 @@ starting hypothesis to test, not a fact about the market.
 | Company / job / inspector lines | no | yes |
 | Stamp themes | no | yes |
 | Before / After images | no | yes |
+| Job-site geofence per project | no | yes |
+| Photo ID + SHA-256 fingerprint | yes | yes |
 
 Later Pro candidates: PDF/CSV export, cloud backup, shared team projects.
 
