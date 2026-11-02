@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.1
+- FIX: google_mobile_ads ^9.1.0 (5.x fails on Gradle 9: unknown property 'all'); setup script upgrades an existing constraint
+
 ## v1.1.0 - Trust pack
 - Job-site geofence per project (Pro): set the site from your current position with a 50-500 m radius; chip shows "On site" / distance; the photo prints "On site" or "WARNING: x m from job site"
 - Clock check: warns when the phone time differs from GPS time by over 5 minutes

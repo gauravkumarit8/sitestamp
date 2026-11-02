@@ -29,7 +29,7 @@ if (Test-Path 'pubspec.yaml') {
             @('in_app_purchase', '^3.2.0'),
             @('share_plus', '^13.3.1'),
             @('pdf', '^3.11.0'),
-            @('google_mobile_ads', '^5.3.0'),
+            @('google_mobile_ads', '^9.1.0'),
             @('crypto', '^3.0.3')
         )
         foreach ($d in $deps) {
@@ -45,6 +45,8 @@ if (Test-Path 'pubspec.yaml') {
         }
         # share_plus 11/12 conflict with geolocator 14 (win32); force the compatible line.
         $c = ([regex]'(?m)^([ \t]+)share_plus:[ \t]*\S.*$').Replace($c, '${1}share_plus: ^13.3.1')
+        # google_mobile_ads < 7 is not compatible with Gradle 9 / AGP 9 (configurations.all).
+        $c = ([regex]'(?m)^([ \t]+)google_mobile_ads:[ \t]*\S.*$').Replace($c, '${1}google_mobile_ads: ^9.1.0')
         return $c
     }
 }
