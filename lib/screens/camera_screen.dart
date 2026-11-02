@@ -10,6 +10,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
+import '../models/checklist.dart';
 import '../models/photo_id.dart';
 import '../models/saved_photo.dart';
 import '../models/site_location.dart';
@@ -69,6 +70,7 @@ class _CameraScreenState extends State<CameraScreen>
   Timer? _focusTimer;
   bool _shutterFlash = false;
   SavedPhoto? _lastPhoto;
+  int? _selectedStep; // step chosen by the user; null = next unfinished step
 
   @override
   void initState() {
@@ -282,7 +284,13 @@ class _CameraScreenState extends State<CameraScreen>
       final double? siteDistance = (site != null && fix != null)
           ? site.distanceTo(fix.latitude, fix.longitude)
           : null;
+      final checklist =
+          widget.entitlements.canUseChecklists ? widget.settings.activeChecklist : null;
+      final stepIdx = checklist == null ? null : _currentStepIndex();
+      final stepLabel =
+          (checklist != null && stepIdx != null) ? checklist.stepLabel(stepIdx) : '';
       final data = _location.snapshot(
+        step: stepLabel,
         photoId: PhotoId.generate(),
         siteDistanceM: siteDistance,
         siteRadiusM: site?.radius,
@@ -316,6 +324,10 @@ class _CameraScreenState extends State<CameraScreen>
         libraryLimit: widget.entitlements.libraryLimit,
       );
       await widget.settings.addRecentMemo(data.memo);
+      if (checklist != null && stepIdx != null) {
+        await widget.settings.markStepDone(activeProject, stepIdx);
+        if (mounted) setState(() => _selectedStep = null);
+      }
       if (mounted && item != null) {
         setState(() => _lastPhoto = item.toSavedPhoto());
       }
@@ -481,7 +493,17 @@ class _CameraScreenState extends State<CameraScreen>
                           ),
                         ),
                       ),
-                    _buildProjectChip(),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          _buildProjectChip(),
+                          _buildChecklistChip(),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     _buildMemoChips(),
                     const SizedBox(height: 8),
@@ -657,22 +679,223 @@ class _CameraScreenState extends State<CameraScreen>
                 : '  •  ${StampData.formatDistance(d)} away';
           }
         }
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: ActionChip(
-            avatar: Icon(
-              pro ? Icons.folder_outlined : Icons.lock_outline,
-              size: 18,
-              color: Colors.white,
-            ),
-            label: Text(label),
-            labelStyle: const TextStyle(color: Colors.white),
-            backgroundColor: const Color(0x99000000),
-            onPressed: pro ? _openProjects : _openProScreen,
+        return ActionChip(
+          avatar: Icon(
+            pro ? Icons.folder_outlined : Icons.lock_outline,
+            size: 18,
+            color: Colors.white,
           ),
+          label: Text(label),
+          labelStyle: const TextStyle(color: Colors.white),
+          backgroundColor: const Color(0x99000000),
+          onPressed: pro ? _openProjects : _openProScreen,
         );
       },
     );
+  }
+
+  /// Which step the next photo belongs to (null if no checklist or all done).
+  int? _currentStepIndex() {
+    final c = widget.settings.activeChecklist;
+    if (c == null) return null;
+    final project =
+        widget.entitlements.canUseProjects ? widget.settings.project : '';
+    final sel = _selectedStep;
+    if (sel != null && sel >= 0 && sel < c.steps.length) return sel;
+    return widget.settings.nextStepIndex(project);
+  }
+
+  Widget _buildChecklistChip() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([widget.settings, widget.entitlements]),
+      builder: (context, _) {
+        final pro = widget.entitlements.canUseChecklists;
+        final c = pro ? widget.settings.activeChecklist : null;
+        var label = 'Checklist';
+        if (pro && c != null) {
+          final project =
+              widget.entitlements.canUseProjects ? widget.settings.project : '';
+          final done = widget.settings.completedSteps(project).length;
+          final idx = _currentStepIndex();
+          label = idx == null
+              ? '${c.name}: all ${c.steps.length} done'
+              : 'Step ${idx + 1}/${c.steps.length}: ${c.steps[idx]}  ($done done)';
+        }
+        return ActionChip(
+          avatar: Icon(
+            pro ? Icons.checklist : Icons.lock_outline,
+            size: 18,
+            color: Colors.white,
+          ),
+          label: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 230),
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+          labelStyle: const TextStyle(color: Colors.white),
+          backgroundColor: const Color(0x99000000),
+          onPressed: pro ? _openChecklist : _openProScreen,
+        );
+      },
+    );
+  }
+
+  Future<void> _openChecklist() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: AnimatedBuilder(
+            animation: widget.settings,
+            builder: (ctx, _) {
+              final st = widget.settings;
+              final project =
+                  widget.entitlements.canUseProjects ? st.project : '';
+              final active = st.activeChecklist;
+              final done = st.completedSteps(project);
+              final current = _currentStepIndex();
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: const Text('Photo checklist'),
+                    subtitle: Text(
+                      active == null
+                          ? 'Pick a checklist. Each photo is tagged with its step.'
+                          : 'Tap a step to shoot it next. Steps tick off when '
+                              'you take the photo.',
+                    ),
+                  ),
+                  for (final c in st.checklists)
+                    ListTile(
+                      leading: Icon(
+                        c.id == active?.id
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                      ),
+                      title: Text(c.name),
+                      subtitle: Text('${c.steps.length} steps'),
+                      trailing: c.builtIn
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Delete this checklist',
+                              onPressed: () => st.removeChecklist(c.id),
+                            ),
+                      onTap: () {
+                        st.setActiveChecklist(c.id);
+                        setState(() => _selectedStep = null);
+                      },
+                    ),
+                  if (active != null) ...[
+                    const Divider(),
+                    for (var i = 0; i < active.steps.length; i++)
+                      ListTile(
+                        dense: true,
+                        selected: i == current,
+                        leading: Icon(
+                          done.contains(i)
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: done.contains(i) ? const Color(0xFF43A047) : null,
+                        ),
+                        title: Text('${i + 1}. ${active.steps[i]}'),
+                        onTap: () {
+                          setState(() => _selectedStep = i);
+                          Navigator.of(ctx).pop();
+                        },
+                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TextButton.icon(
+                          icon: const Icon(Icons.restart_alt),
+                          label: const Text('Start over'),
+                          onPressed: () {
+                            st.resetProgress(project);
+                            setState(() => _selectedStep = null);
+                          },
+                        ),
+                        TextButton.icon(
+                          icon: const Icon(Icons.block),
+                          label: const Text('Turn off'),
+                          onPressed: () {
+                            st.setActiveChecklist(null);
+                            setState(() => _selectedStep = null);
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                  ListTile(
+                    leading: const Icon(Icons.add),
+                    title: const Text('New checklist'),
+                    onTap: () async {
+                      Navigator.of(ctx).pop();
+                      await _newChecklistDialog();
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _newChecklistDialog() async {
+    final name = TextEditingController();
+    final steps = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New checklist'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                maxLength: 40,
+                decoration: const InputDecoration(labelText: 'Checklist name'),
+              ),
+              TextField(
+                controller: steps,
+                minLines: 5,
+                maxLines: 10,
+                decoration: const InputDecoration(
+                  labelText: 'Steps (one photo per line)',
+                  alignLabelWithHint: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+    final parsed = Checklist.parseSteps(steps.text);
+    if (ok == true && parsed.isNotEmpty) {
+      await widget.settings.addChecklist(name.text, parsed);
+      if (mounted) setState(() => _selectedStep = null);
+    } else if (ok == true) {
+      _toast('Add at least one step.');
+    }
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      name.dispose();
+      steps.dispose();
+    });
   }
 
   Future<void> _openProjects() async {

@@ -21,6 +21,7 @@ class StampData {
     this.photoId = '',
     this.siteDistanceM,
     this.siteRadiusM,
+    this.step = '',
   });
 
   final DateTime time;
@@ -41,6 +42,7 @@ class StampData {
   final String photoId;
   final double? siteDistanceM;
   final double? siteRadiusM;
+  final String step;
 
   bool get hasFix => latitude != null && longitude != null;
 
@@ -123,6 +125,7 @@ class StampData {
         'photoId': photoId,
         'siteDist': siteDistanceM,
         'siteRad': siteRadiusM,
+        'step': step,
       };
 
   factory StampData.fromJson(Map<String, dynamic> j) => StampData(
@@ -143,6 +146,7 @@ class StampData {
         photoId: (j['photoId'] as String?) ?? '',
         siteDistanceM: (j['siteDist'] as num?)?.toDouble(),
         siteRadiusM: (j['siteRad'] as num?)?.toDouble(),
+        step: (j['step'] as String?) ?? '',
       );
 
   List<String> toLines() {
@@ -152,6 +156,7 @@ class StampData {
     lines.add(formatTime(time));
     final proj = project.trim();
     if (proj.isNotEmpty) lines.add('Project: $proj');
+    if (step.trim().isNotEmpty) lines.add(step.trim());
     final ref = reference.trim();
     final insp = inspector.trim();
     final refLine = [

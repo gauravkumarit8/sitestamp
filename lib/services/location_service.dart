@@ -82,6 +82,7 @@ class LocationService {
     String photoId = '',
     double? siteDistanceM,
     double? siteRadiusM,
+    String step = '',
   }) {
     final p = freshFix();
     return StampData(
@@ -96,6 +97,7 @@ class LocationService {
       photoId: photoId,
       siteDistanceM: siteDistanceM,
       siteRadiusM: siteRadiusM,
+      step: step,
       address: p == null ? null : address,
       branding: branding,
       project: project,

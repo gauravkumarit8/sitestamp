@@ -52,6 +52,12 @@ Phone model + Android version: ______________________
 | 40 | Every photo has "ID: SS-XXXXXXXX"; CSV export has photo_id and sha256 | |
 | 41 | Change phone date/time manually: pill/photo show clock warning (needs a GPS fix) | |
 
+| 42 | Pro: open Checklist chip, choose "Rooftop solar installation"; chip shows "Step 1/8" | |
+| 43 | Take a photo: stamp prints "Step 1/8: ..."; chip moves to step 2; steps show green ticks | |
+| 44 | Tap step 5 to shoot it out of order; photo is tagged step 5 | |
+| 45 | New checklist from text works; Start over resets ticks; CSV has checklist_step | |
+| 46 | Free user: Checklist chip shows a lock and opens the Pro screen | |
+
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a
 crash, also send the Build run link and, if you can, `adb logcat` output.

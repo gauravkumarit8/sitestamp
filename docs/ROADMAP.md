@@ -23,7 +23,7 @@ web checkout for seats. This is what companies actually pay for.
 ## P3 - Reach
 - Hindi (then other Indian languages) interface - M
 - Landscape + tablet support - S/M
-- Inspection checklists / templates - M
+- Inspection checklists / templates - M  (DONE in v1.2.0, Pro)
 - Photo annotations (arrow, circle, text) - M
 - Attendance mode (selfie clock in/out, geofenced) - M
 

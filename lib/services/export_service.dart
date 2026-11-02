@@ -49,6 +49,7 @@ class ExportService {
       'clock_check',
       'site_status',
       'site_distance_m',
+      'checklist_step',
     ];
     final rows = <String>[header.join(',')];
     for (final it in items) {
@@ -74,6 +75,7 @@ class ExportService {
           d.clockMismatch ? 'mismatch' : 'ok',
           d.siteStatus,
           d.siteDistanceM?.round().toString() ?? '',
+          d.step,
         ].map(csvEscape).join(','),
       );
     }
@@ -93,6 +95,7 @@ class ExportService {
       '#$index  ${StampData.formatTime(d.time)}',
       if (d.company.trim().isNotEmpty) d.company.trim(),
       if (d.project.trim().isNotEmpty) 'Project: ${d.project.trim()}',
+      if (d.step.trim().isNotEmpty) d.step.trim(),
       if (d.reference.trim().isNotEmpty || d.inspector.trim().isNotEmpty)
         [
           if (d.reference.trim().isNotEmpty) 'Ref: ${d.reference.trim()}',

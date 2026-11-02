@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/checklist.dart';
 import '../models/site_location.dart';
 import '../models/stamp_style.dart';
 
@@ -19,6 +20,9 @@ class AppSettings extends ChangeNotifier {
   static const String _kStampSize = 'stamp_size';
   static const String _kLocationMode = 'location_mode';
   static const String _kSites = 'project_sites';
+  static const String _kChecklists = 'checklists';
+  static const String _kActiveChecklist = 'active_checklist';
+  static const String _kProgress = 'checklist_progress';
   static const String _kStampTheme = 'stamp_theme';
   static const String _kCompany = 'stamp_company';
   static const String _kReference = 'stamp_reference';
@@ -43,6 +47,9 @@ class AppSettings extends ChangeNotifier {
   StampStyle _style = const StampStyle();
   StampLocationMode _locationMode = StampLocationMode.addressFirst;
   Map<String, SiteLocation> _sites = <String, SiteLocation>{};
+  List<Checklist> _customChecklists = <Checklist>[];
+  String _activeChecklistId = '';
+  Map<String, List<int>> _progress = <String, List<int>>{};
   String _company = '';
   String _reference = '';
   String _inspector = '';
@@ -56,6 +63,32 @@ class AppSettings extends ChangeNotifier {
   StampLocationMode get locationMode => _locationMode;
   String get companyName => _company;
   SiteLocation? siteFor(String project) => _sites[project];
+
+  // ---- checklists ----
+  List<Checklist> get checklists => [...Checklist.builtIns, ..._customChecklists];
+
+  Checklist? get activeChecklist {
+    for (final c in checklists) {
+      if (c.id == _activeChecklistId) return c;
+    }
+    return null;
+  }
+
+  String _progressKey(String project) => '$project|$_activeChecklistId';
+
+  Set<int> completedSteps(String project) =>
+      (_progress[_progressKey(project)] ?? const <int>[]).toSet();
+
+  /// First step not done yet for this project, or null if all done / no list.
+  int? nextStepIndex(String project) {
+    final c = activeChecklist;
+    if (c == null) return null;
+    final done = completedSteps(project);
+    for (var i = 0; i < c.steps.length; i++) {
+      if (!done.contains(i)) return i;
+    }
+    return null;
+  }
   String get reference => _reference;
   String get inspector => _inspector;
 
@@ -87,6 +120,24 @@ class AppSettings extends ChangeNotifier {
         };
       }
     } catch (_) {}
+    try {
+      final raw = prefs.getString(_kChecklists);
+      if (raw != null && raw.isNotEmpty) {
+        s._customChecklists = [
+          for (final e in (jsonDecode(raw) as List))
+            Checklist.fromJson(e as Map<String, dynamic>),
+        ];
+      }
+      final prog = prefs.getString(_kProgress);
+      if (prog != null && prog.isNotEmpty) {
+        final map = jsonDecode(prog) as Map<String, dynamic>;
+        s._progress = {
+          for (final e in map.entries)
+            e.key: [for (final v in (e.value as List)) (v as num).toInt()],
+        };
+      }
+    } catch (_) {}
+    s._activeChecklistId = prefs.getString(_kActiveChecklist) ?? '';
     s._company = prefs.getString(_kCompany) ?? '';
     s._reference = prefs.getString(_kReference) ?? '';
     s._inspector = prefs.getString(_kInspector) ?? '';
@@ -170,6 +221,54 @@ class AppSettings extends ChangeNotifier {
     }
     notifyListeners();
     await _saveSites();
+  }
+
+  Future<void> _saveChecklists() => _prefs.setString(
+        _kChecklists,
+        jsonEncode([for (final c in _customChecklists) c.toJson()]),
+      );
+
+  Future<void> _saveProgress() => _prefs.setString(_kProgress, jsonEncode(_progress));
+
+  Future<void> setActiveChecklist(String? id) async {
+    _activeChecklistId = id ?? '';
+    notifyListeners();
+    await _prefs.setString(_kActiveChecklist, _activeChecklistId);
+  }
+
+  /// Creates a custom checklist and makes it the active one.
+  Future<void> addChecklist(String name, List<String> steps) async {
+    final n = name.trim().isEmpty ? 'My checklist' : name.trim();
+    final id = 'custom_${DateTime.now().microsecondsSinceEpoch}';
+    _customChecklists = [..._customChecklists, Checklist(id: id, name: n, steps: steps)];
+    _activeChecklistId = id;
+    notifyListeners();
+    await _saveChecklists();
+    await _prefs.setString(_kActiveChecklist, _activeChecklistId);
+  }
+
+  Future<void> removeChecklist(String id) async {
+    _customChecklists = _customChecklists.where((c) => c.id != id).toList();
+    _progress.removeWhere((k, _) => k.endsWith('|$id'));
+    if (_activeChecklistId == id) _activeChecklistId = '';
+    notifyListeners();
+    await _saveChecklists();
+    await _saveProgress();
+    await _prefs.setString(_kActiveChecklist, _activeChecklistId);
+  }
+
+  Future<void> markStepDone(String project, int index) async {
+    final key = _progressKey(project);
+    final list = {...(_progress[key] ?? const <int>[]), index}.toList()..sort();
+    _progress[key] = list;
+    notifyListeners();
+    await _saveProgress();
+  }
+
+  Future<void> resetProgress(String project) async {
+    _progress.remove(_progressKey(project));
+    notifyListeners();
+    await _saveProgress();
   }
 
   Future<void> setStampTheme(StampTheme t) async {

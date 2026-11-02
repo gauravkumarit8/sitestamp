@@ -22,6 +22,8 @@ void main() {
     expect(e.showAds, isTrue);
     expect(e.canUseStampText, isFalse);
     expect(e.canMakeCollage, isFalse);
+    expect(e.canUseChecklists, isFalse);
+    expect(e.canUseGeofence, isFalse);
   });
 
   test('recently confirmed purchase is Pro', () async {
@@ -39,6 +41,8 @@ void main() {
     expect(e.showAds, isFalse);
     expect(e.canUseStampText, isTrue);
     expect(e.canMakeCollage, isTrue);
+    expect(e.canUseChecklists, isTrue);
+    expect(e.canUseGeofence, isTrue);
   });
 
   test('purchase not re-confirmed for 20 days falls back to free', () async {

@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.0 - Checklists
+- Photo checklists (Pro): required photos for a job. Built-in examples (rooftop solar, civil works, maintenance visit, delivery proof) or create your own (one step per line)
+- A chip shows the next step; tap to pick any step. Each photo is tagged "Step 3/8: ..." on the stamp and ticks the step off. Progress is kept per project; "Start over" resets it
+- CSV export gets a checklist_step column; PDF captions and share text include the step
+
 ## v1.1.1
 - FIX: google_mobile_ads ^9.1.0 (5.x fails on Gradle 9: unknown property 'all'); setup script upgrades an existing constraint
 

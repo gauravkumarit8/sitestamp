@@ -42,6 +42,9 @@ class Entitlements extends ChangeNotifier {
   /// Job-site geofence per project (flags photos taken away from the site).
   bool get canUseGeofence => isPro;
 
+  /// Photo checklists (steps per job, tagged on each photo).
+  bool get canUseChecklists => isPro;
+
   /// Before/After comparison images.
   bool get canMakeCollage => isPro;
 

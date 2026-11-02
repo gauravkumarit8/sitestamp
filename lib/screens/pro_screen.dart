@@ -41,6 +41,7 @@ class ProScreen extends StatelessWidget {
                 const _Benefit('Stamp themes, position and size'),
                 const _Benefit('Projects: one gallery album per job'),
                 const _Benefit('Job-site geofence: flags photos taken away from the site'),
+                const _Benefit('Photo checklists: required photos for every job'),
                 const _Benefit('Before / After comparison images'),
                 const _Benefit('Unlimited PDF and CSV export'),
                 const _Benefit('Keep every photo in the in-app list'),

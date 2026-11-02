@@ -16,6 +16,7 @@ class SavedPhoto {
     lines.add(StampData.formatTime(d.time));
     final proj = d.project.trim();
     if (proj.isNotEmpty) lines.add('Project: $proj');
+    if (d.step.trim().isNotEmpty) lines.add(d.step.trim());
     final refLine = [
       if (d.reference.trim().isNotEmpty) 'Ref: ${d.reference.trim()}',
       if (d.inspector.trim().isNotEmpty) 'By: ${d.inspector.trim()}',
