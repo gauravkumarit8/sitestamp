@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.2.2
+- FIX: AGP 9 rejects proguard-android.txt; the release script now uses proguard-android-optimize.txt
+
 ## v1.2.1 - Release crash fix
 - FIX: release builds crashed at startup ("Failed to create an instance of androidx.work.impl.WorkDatabase"). AGP 9's stricter R8 breaks WorkManager/Room pulled in by the ads SDK. Added android/app/proguard-rules.pro (wired in by tool/apply_signing_config.ps1) and the release workflow now also builds with --no-shrink
 
