@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.2.1 - Release crash fix
+- FIX: release builds crashed at startup ("Failed to create an instance of androidx.work.impl.WorkDatabase"). AGP 9's stricter R8 breaks WorkManager/Room pulled in by the ads SDK. Added android/app/proguard-rules.pro (wired in by tool/apply_signing_config.ps1) and the release workflow now also builds with --no-shrink
+
 ## v1.2.0 - Checklists
 - Photo checklists (Pro): required photos for a job. Built-in examples (rooftop solar, civil works, maintenance visit, delivery proof) or create your own (one step per line)
 - A chip shows the next step; tap to pick any step. Each photo is tagged "Step 3/8: ..." on the stamp and ticks the step off. Progress is kept per project; "Start over" resets it

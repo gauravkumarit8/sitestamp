@@ -52,6 +52,15 @@ if ($c.Contains($old)) {
     Fail 'debug signingConfig line not found in release buildType'
 }
 
+# 2b) keep rules for the release build (WorkManager/Room crash under AGP 9 R8)
+if (-not $c.Contains('proguard-rules.pro')) {
+    $mSign = ([regex]'(?m)^([ \t]*)signingConfig = signingConfigs\.getByName\("release"\)').Match($c)
+    if (-not $mSign.Success) { Fail 'release signingConfig line not found for proguard insert' }
+    $indent = $mSign.Groups[1].Value
+    $line = "`n" + $indent + 'proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")'
+    $c = $c.Insert($mSign.Index + $mSign.Length, $line)
+}
+
 # 3) read key.properties above the android { } block
 $mAndroid = ([regex]'(?m)^android\s*\{').Match($c)
 if (-not $mAndroid.Success) { Fail 'android { block not found' }
