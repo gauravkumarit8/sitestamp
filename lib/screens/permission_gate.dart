@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/tx.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../services/app_settings.dart';
@@ -97,13 +98,13 @@ class _PermissionGateState extends State<PermissionGate>
             children: [
               const Icon(Icons.photo_camera_outlined, size: 64),
               const SizedBox(height: 16),
-              Text(
+              Tx(
                 'SiteStamp needs two permissions',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 12),
-              const Text(
+              const Tx(
                 'Camera: to take the photo.\n'
                 'Location: to stamp where it was taken.',
                 textAlign: TextAlign.center,
@@ -112,12 +113,12 @@ class _PermissionGateState extends State<PermissionGate>
               if (_permanentlyDenied)
                 FilledButton(
                   onPressed: openAppSettings,
-                  child: const Text('Open Settings'),
+                  child: const Tx('Open Settings'),
                 )
               else
                 FilledButton(
                   onPressed: () => _check(request: true),
-                  child: const Text('Grant permissions'),
+                  child: const Tx('Grant permissions'),
                 ),
             ],
           ),

@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.0
+- Hindi interface (हिन्दी): switch in Settings or on the first screen; follows the phone language on first launch. The text printed on photos stays English by design
+- Stamp format options: 12 or 24-hour time, decimal or degrees-minutes-seconds coordinates, metres or feet
+- Photo size: Small (1280), Standard (1920), Large (2400, Pro)
+- Self-timer: 3 or 10 seconds with an on-screen countdown (tap the shutter to cancel)
+- Welcome screens on first launch (3 pages, with language choice)
+
 ## v1.2.2
 - FIX: AGP 9 rejects proguard-android.txt; the release script now uses proguard-android-optimize.txt
 

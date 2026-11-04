@@ -58,6 +58,13 @@ Phone model + Android version: ______________________
 | 45 | New checklist from text works; Start over resets ticks; CSV has checklist_step | |
 | 46 | Free user: Checklist chip shows a lock and opens the Pro screen | |
 
+| 47 | First launch shows 3 welcome screens; Skip and Get started both go to permissions; not shown again | |
+| 48 | Settings: switch to हिन्दी; labels, chips, dialogs and Pro screen change to Hindi; switch back works | |
+| 49 | Phone set to Hindi, fresh install: app starts in Hindi | |
+| 50 | Settings: 12-hour, Deg-min-sec, Feet change the preview and the next photo's stamp | |
+| 51 | Photo size Small/Standard: photos save faster/smaller; Large asks for Pro on free | |
+| 52 | Timer 3 s and 10 s: countdown shows, photo is taken at 0; tapping the shutter during countdown cancels | |
+
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a
 crash, also send the Build run link and, if you can, `adb logcat` output.

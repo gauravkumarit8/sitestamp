@@ -81,3 +81,50 @@ class StampStyle {
         theme: theme ?? this.theme,
       );
 }
+
+
+enum TimeFormat { h24, h12 }
+
+enum CoordFormat { decimal, dms }
+
+enum AltitudeUnit { meters, feet }
+
+/// How time, coordinates and altitude are written on the stamp.
+class StampFormat {
+  const StampFormat({
+    this.time = TimeFormat.h24,
+    this.coords = CoordFormat.decimal,
+    this.altitude = AltitudeUnit.meters,
+  });
+
+  final TimeFormat time;
+  final CoordFormat coords;
+  final AltitudeUnit altitude;
+
+  StampFormat copyWith({
+    TimeFormat? time,
+    CoordFormat? coords,
+    AltitudeUnit? altitude,
+  }) =>
+      StampFormat(
+        time: time ?? this.time,
+        coords: coords ?? this.coords,
+        altitude: altitude ?? this.altitude,
+      );
+}
+
+/// Longest side of the saved photo. Large needs Pro (uses more memory/storage).
+enum PhotoSize { small, standard, large }
+
+extension PhotoSizePixels on PhotoSize {
+  int get maxSide {
+    switch (this) {
+      case PhotoSize.small:
+        return 1280;
+      case PhotoSize.standard:
+        return 1920;
+      case PhotoSize.large:
+        return 2400;
+    }
+  }
+}

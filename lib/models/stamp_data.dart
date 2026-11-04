@@ -22,6 +22,7 @@ class StampData {
     this.siteDistanceM,
     this.siteRadiusM,
     this.step = '',
+    this.format = const StampFormat(),
   });
 
   final DateTime time;
@@ -43,6 +44,7 @@ class StampData {
   final double? siteDistanceM;
   final double? siteRadiusM;
   final String step;
+  final StampFormat format;
 
   bool get hasFix => latitude != null && longitude != null;
 
@@ -102,6 +104,26 @@ class StampData {
     return 'UTC$sign${_two(a.inHours)}:${_two(a.inMinutes % 60)}';
   }
 
+  /// "30 Oct 2026  3:38:47 PM  UTC+05:30"
+  static String formatTime12(DateTime t) {
+    final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+    final ap = t.hour >= 12 ? 'PM' : 'AM';
+    return '${_two(t.day)} ${_months[t.month - 1]} ${t.year}  '
+        '$h:${_two(t.minute)}:${_two(t.second)} $ap  ${tzLabel(t)}';
+  }
+
+  /// 26.118901 -> 26°07'08.0"N  (rounded to tenths of a second, carry-safe)
+  static String dms(double value, {required bool isLat}) {
+    final hemi = isLat ? (value >= 0 ? 'N' : 'S') : (value >= 0 ? 'E' : 'W');
+    final tenths = (value.abs() * 3600 * 10).round();
+    final d = tenths ~/ 36000;
+    final rem = tenths % 36000;
+    final m = rem ~/ 600;
+    final sTenths = rem % 600;
+    final sec = '${_two(sTenths ~/ 10)}.${sTenths % 10}';
+    return '$d°${_two(m)}\'$sec"$hemi';
+  }
+
   /// "2026-10-28 14:32:05" (local time)
   static String isoLocal(DateTime t) =>
       '${t.year}-${_two(t.month)}-${_two(t.day)} '
@@ -153,7 +175,7 @@ class StampData {
     final lines = <String>[];
     final co = company.trim();
     if (co.isNotEmpty) lines.add(co);
-    lines.add(formatTime(time));
+    lines.add(format.time == TimeFormat.h12 ? formatTime12(time) : formatTime(time));
     final proj = project.trim();
     if (proj.isNotEmpty) lines.add('Project: $proj');
     if (step.trim().isNotEmpty) lines.add(step.trim());
@@ -174,11 +196,19 @@ class StampData {
       if (showAddr) lines.add(addr);
       if (showCoords) {
         lines.add(
-          'Lat ${latitude!.toStringAsFixed(6)}  Lon ${longitude!.toStringAsFixed(6)}',
+          format.coords == CoordFormat.dms
+              ? '${dms(latitude!, isLat: true)}  ${dms(longitude!, isLat: false)}'
+              : 'Lat ${latitude!.toStringAsFixed(6)}  Lon ${longitude!.toStringAsFixed(6)}',
         );
       }
       final parts = <String>[];
-      if (altitude != null) parts.add('Alt ${altitude!.round()} m');
+      if (altitude != null) {
+        parts.add(
+          format.altitude == AltitudeUnit.feet
+              ? 'Alt ${(altitude! * 3.28084).round()} ft'
+              : 'Alt ${altitude!.round()} m',
+        );
+      }
       if (accuracy != null) parts.add('Accuracy ±${accuracy!.round()} m');
       if (parts.isNotEmpty) lines.add(parts.join('   '));
       if (isMocked) lines.add('WARNING: mock location detected');

@@ -253,4 +253,53 @@ void main() {
     expect(back.clockMismatch, isTrue);
     expect(back.siteDistanceM, 640);
   });
+
+  test('12-hour time on the stamp', () {
+    expect(StampData.formatTime12(DateTime(2026, 10, 30, 15, 38, 47)),
+        startsWith('30 Oct 2026  3:38:47 PM'));
+    expect(StampData.formatTime12(DateTime(2026, 1, 2, 0, 5, 9)),
+        startsWith('02 Jan 2026  12:05:09 AM'));
+    expect(StampData.formatTime12(DateTime(2026, 1, 2, 12, 0, 0)),
+        startsWith('02 Jan 2026  12:00:00 PM'));
+    final d = StampData(
+      time: DateTime(2026, 1, 2, 3, 4, 5),
+      memo: '',
+      format: const StampFormat(time: TimeFormat.h12),
+    );
+    expect(d.toLines().first, startsWith('02 Jan 2026  3:04:05 AM'));
+  });
+
+  test('degrees-minutes-seconds', () {
+    expect(StampData.dms(26.118901, isLat: true), "26°07'08.0\"N");
+    expect(StampData.dms(85.348656, isLat: false), "85°20'55.2\"E");
+    expect(StampData.dms(-77.5, isLat: false), "77°30'00.0\"W");
+    expect(StampData.dms(-33.25, isLat: true), "33°15'00.0\"S");
+    // seconds that round up to 60 must carry into the minute
+    expect(StampData.dms(10.99999999, isLat: true), "11°00'00.0\"N");
+  });
+
+  test('stamp can use DMS coordinates and feet', () {
+    final d = StampData(
+      time: DateTime(2026, 1, 2, 3, 4, 5),
+      memo: '',
+      latitude: 26.118901,
+      longitude: 85.348656,
+      altitude: 28,
+      accuracy: 5,
+      format: const StampFormat(
+        coords: CoordFormat.dms,
+        altitude: AltitudeUnit.feet,
+      ),
+    );
+    final lines = d.toLines();
+    expect(lines, contains("26°07'08.0\"N  85°20'55.2\"E"));
+    expect(lines.any((l) => l.startsWith('Alt 92 ft')), isTrue);
+    expect(lines.any((l) => l.startsWith('Lat ')), isFalse);
+  });
+
+  test('photo sizes', () {
+    expect(PhotoSize.small.maxSide, 1280);
+    expect(PhotoSize.standard.maxSide, 1920);
+    expect(PhotoSize.large.maxSide, 2400);
+  });
 }

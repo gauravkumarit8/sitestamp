@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_language.dart';
 import '../services/location_service.dart';
 
 class GpsStatusPill extends StatefulWidget {
@@ -36,7 +37,11 @@ class _GpsStatusPillState extends State<GpsStatusPill> {
   Widget build(BuildContext context) {
     final loc = widget.location;
     return AnimatedBuilder(
-      animation: Listenable.merge([loc.latest, loc.serviceEnabled]),
+      animation: Listenable.merge([
+        loc.latest,
+        loc.serviceEnabled,
+        AppLanguage.instance,
+      ]),
       builder: (context, _) {
         final enabled = loc.serviceEnabled.value;
         final fix = loc.freshFix();
@@ -57,10 +62,10 @@ class _GpsStatusPillState extends State<GpsStatusPill> {
           label = 'Device clock differs from GPS';
         } else if (fix.accuracy > 50) {
           color = const Color(0xFFFB8C00);
-          label = 'GPS weak (±${fix.accuracy.round()} m)';
+          label = '${tr('GPS weak')} (±${fix.accuracy.round()} m)';
         } else {
           color = const Color(0xFF43A047);
-          label = 'GPS Ready (±${fix.accuracy.round()} m)';
+          label = '${tr('GPS Ready')} (±${fix.accuracy.round()} m)';
         }
 
         return GestureDetector(
@@ -83,7 +88,7 @@ class _GpsStatusPillState extends State<GpsStatusPill> {
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    label,
+                    tr(label),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

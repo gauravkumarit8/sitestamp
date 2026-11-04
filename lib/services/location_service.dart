@@ -83,6 +83,7 @@ class LocationService {
     double? siteDistanceM,
     double? siteRadiusM,
     String step = '',
+    StampFormat format = const StampFormat(),
   }) {
     final p = freshFix();
     return StampData(
@@ -98,6 +99,7 @@ class LocationService {
       siteDistanceM: siteDistanceM,
       siteRadiusM: siteRadiusM,
       step: step,
+      format: format,
       address: p == null ? null : address,
       branding: branding,
       project: project,

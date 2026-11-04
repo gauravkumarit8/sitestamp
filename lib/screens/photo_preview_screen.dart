@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../widgets/tx.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/saved_photo.dart';
@@ -25,7 +26,7 @@ class PhotoPreviewScreen extends StatelessWidget {
       );
     } catch (_) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not open the share sheet.')),
+        const SnackBar(content: Tx('Could not open the share sheet.')),
       );
     }
   }
@@ -37,7 +38,7 @@ class PhotoPreviewScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Photo'),
+        title: const Tx('Photo'),
         actions: [
           if (onAllPhotos != null)
             TextButton.icon(
@@ -46,7 +47,7 @@ class PhotoPreviewScreen extends StatelessWidget {
                 onAllPhotos!();
               },
               icon: const Icon(Icons.grid_view, color: Colors.white),
-              label: const Text(
+              label: const Tx(
                 'All photos',
                 style: TextStyle(color: Colors.white),
               ),
@@ -63,7 +64,7 @@ class PhotoPreviewScreen extends StatelessWidget {
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stack) => const Padding(
                     padding: EdgeInsets.all(24),
-                    child: Text(
+                    child: Tx(
                       'This preview is no longer available. '
                       'The photo is still in your gallery.',
                       textAlign: TextAlign.center,
@@ -82,7 +83,7 @@ class PhotoPreviewScreen extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: () => _share(context),
                   icon: const Icon(Icons.share),
-                  label: const Text('Share'),
+                  label: const Tx('Share'),
                 ),
               ),
             ),

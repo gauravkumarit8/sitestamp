@@ -19,7 +19,7 @@ import 'photo_library.dart';
 /// stripped, so there is no orientation flag left to be misread (or applied
 /// twice) by Samsung Gallery, Google Photos or iOS Photos.
 class StampService {
-  static const int _maxSide = 1920;
+  static const int _defaultMaxSide = 1920;
   static const int _jpegQuality = 92;
 
   /// Returns the in-app library entry for the saved photo, or null.
@@ -30,6 +30,7 @@ class StampService {
     String? album,
     PhotoLibrary? library,
     int? libraryLimit,
+    int maxSide = _defaultMaxSide,
   }) async {
     final tmp = await getTemporaryDirectory();
     final id = DateTime.now().microsecondsSinceEpoch;
@@ -42,8 +43,8 @@ class StampService {
       final scaled = await FlutterImageCompress.compressAndGetFile(
         rawPath,
         scaledPath,
-        minWidth: _maxSide,
-        minHeight: _maxSide,
+        minWidth: maxSide,
+        minHeight: maxSide,
         quality: 90,
         autoCorrectionAngle: true,
         keepExif: false,

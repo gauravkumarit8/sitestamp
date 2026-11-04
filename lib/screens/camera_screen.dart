@@ -4,12 +4,14 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
+import '../widgets/tx.dart';
 import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
+import '../l10n/app_language.dart';
 import '../models/checklist.dart';
 import '../models/photo_id.dart';
 import '../models/saved_photo.dart';
@@ -71,6 +73,9 @@ class _CameraScreenState extends State<CameraScreen>
   bool _shutterFlash = false;
   SavedPhoto? _lastPhoto;
   int? _selectedStep; // step chosen by the user; null = next unfinished step
+  int _timerSeconds = 0; // self-timer: 0 (off), 3 or 10
+  int? _countdown; // seconds left while counting down
+  Timer? _countdownTimer;
 
   @override
   void initState() {
@@ -105,6 +110,7 @@ class _CameraScreenState extends State<CameraScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _focusTimer?.cancel();
+    _countdownTimer?.cancel();
     widget.library.removeListener(_refreshLatest);
     _location.latest.removeListener(_onFix);
     _address.dispose();
@@ -212,6 +218,50 @@ class _CameraScreenState extends State<CameraScreen>
     } catch (_) {}
   }
 
+  void _cycleTimer() {
+    setState(() {
+      _timerSeconds = _timerSeconds == 0 ? 3 : (_timerSeconds == 3 ? 10 : 0);
+    });
+  }
+
+  void _onShutterTap() {
+    if (_countdown != null) {
+      _countdownTimer?.cancel();
+      _countdownTimer = null;
+      setState(() => _countdown = null);
+      return;
+    }
+    if (_timerSeconds == 0) {
+      _capture();
+      return;
+    }
+    setState(() => _countdown = _timerSeconds);
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      final left = (_countdown ?? 0) - 1;
+      if (left <= 0) {
+        t.cancel();
+        _countdownTimer = null;
+        setState(() => _countdown = null);
+        _capture();
+      } else {
+        setState(() => _countdown = left);
+      }
+    });
+  }
+
+  /// Large photos need Pro; everyone else falls back to Standard.
+  PhotoSize _effectivePhotoSize() {
+    final p = widget.settings.photoSize;
+    if (p == PhotoSize.large && !widget.entitlements.isPro) {
+      return PhotoSize.standard;
+    }
+    return p;
+  }
+
   void _setError(String msg) {
     if (mounted) setState(() => _error = msg);
   }
@@ -290,6 +340,7 @@ class _CameraScreenState extends State<CameraScreen>
       final stepLabel =
           (checklist != null && stepIdx != null) ? checklist.stepLabel(stepIdx) : '';
       final data = _location.snapshot(
+        format: widget.settings.stampFormat,
         step: stepLabel,
         photoId: PhotoId.generate(),
         siteDistanceM: siteDistance,
@@ -322,6 +373,7 @@ class _CameraScreenState extends State<CameraScreen>
             : const StampStyle(),
         library: widget.library,
         libraryLimit: widget.entitlements.libraryLimit,
+        maxSide: _effectivePhotoSize().maxSide,
       );
       await widget.settings.addRecentMemo(data.memo);
       if (checklist != null && stepIdx != null) {
@@ -347,7 +399,7 @@ class _CameraScreenState extends State<CameraScreen>
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(msg),
+          content: Tx(msg),
           duration: const Duration(milliseconds: 1800),
         ),
       );
@@ -405,6 +457,23 @@ class _CameraScreenState extends State<CameraScreen>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFFFCA28), width: 2),
+                  ),
+                ),
+              ),
+            ),
+          // Self-timer countdown
+          if (_countdown != null)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Center(
+                  child: Text(
+                    '$_countdown',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 140,
+                      fontWeight: FontWeight.w700,
+                      shadows: [Shadow(blurRadius: 12, color: Colors.black)],
+                    ),
                   ),
                 ),
               ),
@@ -485,7 +554,7 @@ class _CameraScreenState extends State<CameraScreen>
                           color: const Color(0x99000000),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: Text(
+                        child: Tx(
                           '${(_zoom / _minZoom).toStringAsFixed(1)}x',
                           style: const TextStyle(
                             color: Colors.white,
@@ -517,7 +586,7 @@ class _CameraScreenState extends State<CameraScreen>
                         textInputAction: TextInputAction.done,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: 'Custom note / memo (optional)',
+                          hintText: tr('Custom note / memo (optional)'),
                           counterText: '',
                           filled: true,
                           fillColor: const Color(0x99000000),
@@ -543,8 +612,20 @@ class _CameraScreenState extends State<CameraScreen>
                             child: _buildLastPhotoThumb(),
                           ),
                         ),
-                        _ShutterButton(busy: _saving, onTap: _capture),
-                        const Expanded(child: SizedBox.shrink()),
+                        _ShutterButton(busy: _saving, onTap: _onShutterTap),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: _RoundButton(
+                              icon: _timerSeconds == 0
+                                  ? Icons.timer_off_outlined
+                                  : (_timerSeconds == 3
+                                      ? Icons.timer_3
+                                      : Icons.timer_10),
+                              onTap: _cycleTimer,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -646,6 +727,7 @@ class _CameraScreenState extends State<CameraScreen>
       longitude: fix?.longitude ?? 77.2090,
       altitude: fix?.altitude ?? 215,
       accuracy: fix?.accuracy ?? 5,
+      format: widget.settings.stampFormat,
       address: widget.settings.showAddress ? 'Sample Street, City, State' : null,
       locationMode: widget.settings.locationMode,
       project: pro ? widget.settings.project : '',
@@ -662,21 +744,22 @@ class _CameraScreenState extends State<CameraScreen>
         widget.settings,
         widget.entitlements,
         _location.latest,
+        AppLanguage.instance,
       ]),
       builder: (context, _) {
         final pro = widget.entitlements.canUseProjects;
         final name = widget.settings.project;
-        var label = (pro && name.isNotEmpty) ? name : 'SiteStamp album';
+        var label = (pro && name.isNotEmpty) ? name : tr('SiteStamp album');
         final site = (pro && name.isNotEmpty) ? widget.settings.siteFor(name) : null;
         final fix = _location.freshFix();
         if (site != null) {
           if (fix == null) {
-            label += '  •  locating...';
+            label += '  •  ${tr('locating...')}';
           } else {
             final d = site.distanceTo(fix.latitude, fix.longitude);
             label += d <= site.radius
-                ? '  •  On site'
-                : '  •  ${StampData.formatDistance(d)} away';
+                ? '  •  ${tr('On site')}'
+                : '  •  ${StampData.formatDistance(d)} ${tr('away')}';
           }
         }
         return ActionChip(
@@ -707,19 +790,23 @@ class _CameraScreenState extends State<CameraScreen>
 
   Widget _buildChecklistChip() {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.settings, widget.entitlements]),
+      animation: Listenable.merge([
+        widget.settings,
+        widget.entitlements,
+        AppLanguage.instance,
+      ]),
       builder: (context, _) {
         final pro = widget.entitlements.canUseChecklists;
         final c = pro ? widget.settings.activeChecklist : null;
-        var label = 'Checklist';
+        var label = tr('Checklist');
         if (pro && c != null) {
           final project =
               widget.entitlements.canUseProjects ? widget.settings.project : '';
           final done = widget.settings.completedSteps(project).length;
           final idx = _currentStepIndex();
           label = idx == null
-              ? '${c.name}: all ${c.steps.length} done'
-              : 'Step ${idx + 1}/${c.steps.length}: ${c.steps[idx]}  ($done done)';
+              ? '${c.name}: ${tr('all')} ${c.steps.length} ${tr('done')}'
+              : '${tr('Step')} ${idx + 1}/${c.steps.length}: ${c.steps[idx]}  ($done ${tr('done')})';
         }
         return ActionChip(
           avatar: Icon(
@@ -758,8 +845,8 @@ class _CameraScreenState extends State<CameraScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    title: const Text('Photo checklist'),
-                    subtitle: Text(
+                    title: const Tx('Photo checklist'),
+                    subtitle: Tx(
                       active == null
                           ? 'Pick a checklist. Each photo is tagged with its step.'
                           : 'Tap a step to shoot it next. Steps tick off when '
@@ -774,12 +861,12 @@ class _CameraScreenState extends State<CameraScreen>
                             : Icons.radio_button_unchecked,
                       ),
                       title: Text(c.name),
-                      subtitle: Text('${c.steps.length} steps'),
+                      subtitle: Tx('${c.steps.length} steps'),
                       trailing: c.builtIn
                           ? null
                           : IconButton(
                               icon: const Icon(Icons.delete_outline),
-                              tooltip: 'Delete this checklist',
+                              tooltip: tr('Delete this checklist'),
                               onPressed: () => st.removeChecklist(c.id),
                             ),
                       onTap: () {
@@ -799,7 +886,7 @@ class _CameraScreenState extends State<CameraScreen>
                               : Icons.radio_button_unchecked,
                           color: done.contains(i) ? const Color(0xFF43A047) : null,
                         ),
-                        title: Text('${i + 1}. ${active.steps[i]}'),
+                        title: Tx('${i + 1}. ${active.steps[i]}'),
                         onTap: () {
                           setState(() => _selectedStep = i);
                           Navigator.of(ctx).pop();
@@ -810,7 +897,7 @@ class _CameraScreenState extends State<CameraScreen>
                       children: [
                         TextButton.icon(
                           icon: const Icon(Icons.restart_alt),
-                          label: const Text('Start over'),
+                          label: const Tx('Start over'),
                           onPressed: () {
                             st.resetProgress(project);
                             setState(() => _selectedStep = null);
@@ -818,7 +905,7 @@ class _CameraScreenState extends State<CameraScreen>
                         ),
                         TextButton.icon(
                           icon: const Icon(Icons.block),
-                          label: const Text('Turn off'),
+                          label: const Tx('Turn off'),
                           onPressed: () {
                             st.setActiveChecklist(null);
                             setState(() => _selectedStep = null);
@@ -830,7 +917,7 @@ class _CameraScreenState extends State<CameraScreen>
                   ],
                   ListTile(
                     leading: const Icon(Icons.add),
-                    title: const Text('New checklist'),
+                    title: const Tx('New checklist'),
                     onTap: () async {
                       Navigator.of(ctx).pop();
                       await _newChecklistDialog();
@@ -851,7 +938,7 @@ class _CameraScreenState extends State<CameraScreen>
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('New checklist'),
+        title: const Tx('New checklist'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -859,14 +946,14 @@ class _CameraScreenState extends State<CameraScreen>
               TextField(
                 controller: name,
                 maxLength: 40,
-                decoration: const InputDecoration(labelText: 'Checklist name'),
+                decoration: InputDecoration(labelText: tr('Checklist name')),
               ),
               TextField(
                 controller: steps,
                 minLines: 5,
                 maxLines: 10,
-                decoration: const InputDecoration(
-                  labelText: 'Steps (one photo per line)',
+                decoration: InputDecoration(
+                  labelText: tr('Steps (one photo per line)'),
                   alignLabelWithHint: true,
                 ),
               ),
@@ -876,11 +963,11 @@ class _CameraScreenState extends State<CameraScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Create'),
+            child: const Tx('Create'),
           ),
         ],
       ),
@@ -912,8 +999,8 @@ class _CameraScreenState extends State<CameraScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const ListTile(
-                    title: Text('Project (gallery album)'),
-                    subtitle: Text(
+                    title: Tx('Project (gallery album)'),
+                    subtitle: Tx(
                       'Photos are saved to an album named after the project.',
                     ),
                   ),
@@ -923,7 +1010,7 @@ class _CameraScreenState extends State<CameraScreen>
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
                     ),
-                    title: const Text('Default (SiteStamp)'),
+                    title: const Tx('Default (SiteStamp)'),
                     onTap: () {
                       widget.settings.selectProject('');
                       Navigator.of(ctx).pop();
@@ -953,7 +1040,7 @@ class _CameraScreenState extends State<CameraScreen>
                                   ? Icons.add_location_alt_outlined
                                   : Icons.edit_location_alt_outlined,
                             ),
-                            tooltip: 'Set job site (geofence)',
+                            tooltip: tr('Set job site (geofence)'),
                             onPressed: () async {
                               Navigator.of(ctx).pop();
                               await _setSiteDialog(p);
@@ -961,7 +1048,7 @@ class _CameraScreenState extends State<CameraScreen>
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete_outline),
-                            tooltip: 'Remove from list (photos stay in gallery)',
+                            tooltip: tr('Remove from list (photos stay in gallery)'),
                             onPressed: () => widget.settings.removeProject(p),
                           ),
                         ],
@@ -973,7 +1060,7 @@ class _CameraScreenState extends State<CameraScreen>
                     ),
                   ListTile(
                     leading: const Icon(Icons.add),
-                    title: const Text('New project'),
+                    title: const Tx('New project'),
                     onTap: () async {
                       Navigator.of(ctx).pop();
                       await _newProjectDialog();
@@ -996,12 +1083,12 @@ class _CameraScreenState extends State<CameraScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: Text('Job site for "$project"'),
+          title: Tx('Job site for "$project"'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              Tx(
                 fix == null
                     ? 'Waiting for a GPS fix. Stand at the site and try again.'
                     : 'Use my current position (±${fix.accuracy.round()} m) '
@@ -1011,21 +1098,21 @@ class _CameraScreenState extends State<CameraScreen>
               if (existing != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(
+                  child: Tx(
                     'Current site: ${existing.lat.toStringAsFixed(5)}, '
                     '${existing.lon.toStringAsFixed(5)}  '
                     '(${existing.radius.round()} m)',
                   ),
                 ),
               const SizedBox(height: 12),
-              const Text('Allowed radius'),
+              const Tx('Allowed radius'),
               const SizedBox(height: 4),
               Wrap(
                 spacing: 8,
                 children: [
                   for (final r in const [50.0, 100.0, 200.0, 500.0])
                     ChoiceChip(
-                      label: Text('${r.round()} m'),
+                      label: Tx('${r.round()} m'),
                       selected: radius == r,
                       onSelected: (_) => setLocal(() => radius = r),
                     ),
@@ -1037,15 +1124,15 @@ class _CameraScreenState extends State<CameraScreen>
             if (existing != null)
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop('clear'),
-                child: const Text('Remove site'),
+                child: const Tx('Remove site'),
               ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop('cancel'),
-              child: const Text('Cancel'),
+              child: const Tx('Cancel'),
             ),
             FilledButton(
               onPressed: fix == null ? null : () => Navigator.of(ctx).pop('save'),
-              child: const Text('Set here'),
+              child: const Tx('Set here'),
             ),
           ],
         ),
@@ -1069,7 +1156,7 @@ class _CameraScreenState extends State<CameraScreen>
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Company and job details'),
+        title: const Tx('Company and job details'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1077,17 +1164,17 @@ class _CameraScreenState extends State<CameraScreen>
               TextField(
                 controller: company,
                 maxLength: 40,
-                decoration: const InputDecoration(labelText: 'Company name'),
+                decoration: InputDecoration(labelText: tr('Company name')),
               ),
               TextField(
                 controller: reference,
                 maxLength: 30,
-                decoration: const InputDecoration(labelText: 'Job / reference no.'),
+                decoration: InputDecoration(labelText: tr('Job / reference no.')),
               ),
               TextField(
                 controller: inspector,
                 maxLength: 30,
-                decoration: const InputDecoration(labelText: 'Inspector name'),
+                decoration: InputDecoration(labelText: tr('Inspector name')),
               ),
             ],
           ),
@@ -1095,11 +1182,11 @@ class _CameraScreenState extends State<CameraScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Save'),
+            child: const Tx('Save'),
           ),
         ],
       ),
@@ -1123,21 +1210,21 @@ class _CameraScreenState extends State<CameraScreen>
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('New project'),
+        title: const Tx('New project'),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 30,
-          decoration: const InputDecoration(hintText: 'e.g. Tower A, Site 12'),
+          decoration: InputDecoration(hintText: tr('e.g. Tower A, Site 12')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: const Text('Create'),
+            child: const Tx('Create'),
           ),
         ],
       ),
@@ -1150,7 +1237,11 @@ class _CameraScreenState extends State<CameraScreen>
 
   Widget _buildMemoChips() {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.settings, widget.entitlements]),
+      animation: Listenable.merge([
+        widget.settings,
+        widget.entitlements,
+        AppLanguage.instance,
+      ]),
       builder: (context, _) {
         final recents =
             widget.settings.recentMemos.take(widget.entitlements.maxRecentMemos).toList();
@@ -1168,7 +1259,7 @@ class _CameraScreenState extends State<CameraScreen>
               final text = all[index];
               final isRecent = recents.contains(text);
               return InputChip(
-                label: Text(text),
+                label: Text(isRecent ? text : tr(text)),
                 labelStyle: const TextStyle(color: Colors.white),
                 backgroundColor: const Color(0x99000000),
                 onPressed: () {
@@ -1238,9 +1329,30 @@ class _CameraScreenState extends State<CameraScreen>
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.language, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SegmentedButton<String>(
+                            showSelectedIcon: false,
+                            segments: const [
+                              ButtonSegment(value: 'en', label: Text('English')),
+                              ButtonSegment(value: 'hi', label: Text('हिन्दी')),
+                            ],
+                            selected: {AppLanguage.instance.code},
+                            onSelectionChanged: (s) =>
+                                widget.settings.setLanguage(s.first),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   SwitchListTile(
-                    title: const Text('Show place name on photo'),
-                    subtitle: const Text(
+                    title: const Tx('Show place name on photo'),
+                    subtitle: const Tx(
                       'Looks up the street address (needs internet). If it '
                       'fails, the photo is stamped with GPS coordinates instead.',
                     ),
@@ -1254,20 +1366,83 @@ class _CameraScreenState extends State<CameraScreen>
                       segments: const [
                         ButtonSegment(
                           value: StampLocationMode.addressFirst,
-                          label: Text('Name'),
+                          label: Tx('Name'),
                         ),
                         ButtonSegment(
                           value: StampLocationMode.both,
-                          label: Text('Name + GPS'),
+                          label: Tx('Name + GPS'),
                         ),
                         ButtonSegment(
                           value: StampLocationMode.coordinatesOnly,
-                          label: Text('GPS only'),
+                          label: Tx('GPS only'),
                         ),
                       ],
                       selected: {widget.settings.locationMode},
                       onSelectionChanged: (s) =>
                           widget.settings.setLocationMode(s.first),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Tx('Stamp format'),
+                        const SizedBox(height: 8),
+                        SegmentedButton<TimeFormat>(
+                          showSelectedIcon: false,
+                          segments: const [
+                            ButtonSegment(
+                              value: TimeFormat.h24,
+                              label: Tx('24-hour'),
+                            ),
+                            ButtonSegment(
+                              value: TimeFormat.h12,
+                              label: Tx('12-hour'),
+                            ),
+                          ],
+                          selected: {widget.settings.stampFormat.time},
+                          onSelectionChanged: (s) => widget.settings.setStampFormat(
+                            widget.settings.stampFormat.copyWith(time: s.first),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SegmentedButton<CoordFormat>(
+                          showSelectedIcon: false,
+                          segments: const [
+                            ButtonSegment(
+                              value: CoordFormat.decimal,
+                              label: Tx('Decimal'),
+                            ),
+                            ButtonSegment(
+                              value: CoordFormat.dms,
+                              label: Tx('Deg-min-sec'),
+                            ),
+                          ],
+                          selected: {widget.settings.stampFormat.coords},
+                          onSelectionChanged: (s) => widget.settings.setStampFormat(
+                            widget.settings.stampFormat.copyWith(coords: s.first),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SegmentedButton<AltitudeUnit>(
+                          showSelectedIcon: false,
+                          segments: const [
+                            ButtonSegment(
+                              value: AltitudeUnit.meters,
+                              label: Tx('Metres'),
+                            ),
+                            ButtonSegment(
+                              value: AltitudeUnit.feet,
+                              label: Tx('Feet'),
+                            ),
+                          ],
+                          selected: {widget.settings.stampFormat.altitude},
+                          onSelectionChanged: (s) => widget.settings.setStampFormat(
+                            widget.settings.stampFormat.copyWith(altitude: s.first),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Padding(
@@ -1295,7 +1470,7 @@ class _CameraScreenState extends State<CameraScreen>
                               const Icon(Icons.lock_outline, size: 16),
                               const SizedBox(width: 6),
                             ],
-                            Text(pro
+                            Tx(pro
                                 ? 'Stamp position, size and theme'
                                 : 'Stamp position, size and theme (Pro)'),
                           ],
@@ -1306,11 +1481,11 @@ class _CameraScreenState extends State<CameraScreen>
                           segments: const [
                             ButtonSegment(
                               value: StampPosition.bottom,
-                              label: Text('Bottom'),
+                              label: Tx('Bottom'),
                             ),
                             ButtonSegment(
                               value: StampPosition.top,
-                              label: Text('Top'),
+                              label: Tx('Top'),
                             ),
                           ],
                           selected: {widget.settings.stampStyle.position},
@@ -1324,15 +1499,15 @@ class _CameraScreenState extends State<CameraScreen>
                           segments: const [
                             ButtonSegment(
                               value: StampSize.small,
-                              label: Text('Small'),
+                              label: Tx('Small'),
                             ),
                             ButtonSegment(
                               value: StampSize.medium,
-                              label: Text('Medium'),
+                              label: Tx('Medium'),
                             ),
                             ButtonSegment(
                               value: StampSize.large,
-                              label: Text('Large'),
+                              label: Tx('Large'),
                             ),
                           ],
                           selected: {widget.settings.stampStyle.size},
@@ -1345,7 +1520,7 @@ class _CameraScreenState extends State<CameraScreen>
                           showSelectedIcon: false,
                           segments: [
                             for (final t in StampTheme.values)
-                              ButtonSegment(value: t, label: Text(t.label)),
+                              ButtonSegment(value: t, label: Tx(t.label)),
                           ],
                           selected: {widget.settings.stampStyle.theme},
                           onSelectionChanged: pro
@@ -1355,12 +1530,48 @@ class _CameraScreenState extends State<CameraScreen>
                       ],
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Tx('Photo size'),
+                        const SizedBox(height: 8),
+                        SegmentedButton<PhotoSize>(
+                          showSelectedIcon: false,
+                          segments: [
+                            const ButtonSegment(
+                              value: PhotoSize.small,
+                              label: Tx('Small'),
+                            ),
+                            const ButtonSegment(
+                              value: PhotoSize.standard,
+                              label: Tx('Standard'),
+                            ),
+                            ButtonSegment(
+                              value: PhotoSize.large,
+                              label: Tx(pro ? 'Large' : 'Large (Pro)'),
+                            ),
+                          ],
+                          selected: {_effectivePhotoSize()},
+                          onSelectionChanged: (s) {
+                            if (s.first == PhotoSize.large && !pro) {
+                              Navigator.of(ctx).pop();
+                              _openProScreen();
+                            } else {
+                              widget.settings.setPhotoSize(s.first);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                   ListTile(
                     leading: Icon(
                       pro ? Icons.business_outlined : Icons.lock_outline,
                     ),
-                    title: const Text('Company and job details'),
-                    subtitle: Text(
+                    title: const Tx('Company and job details'),
+                    subtitle: Tx(
                       pro
                           ? (widget.settings.companyName.isEmpty &&
                                   widget.settings.reference.isEmpty &&
@@ -1383,15 +1594,15 @@ class _CameraScreenState extends State<CameraScreen>
                     },
                   ),
                   SwitchListTile(
-                    title: const Text('Grid lines'),
-                    subtitle: const Text('Rule-of-thirds guide while framing.'),
+                    title: const Tx('Grid lines'),
+                    subtitle: const Tx('Rule-of-thirds guide while framing.'),
                     value: widget.settings.showGrid,
                     onChanged: (v) => widget.settings.setShowGrid(v),
                   ),
                   ListTile(
                     leading: Icon(pro ? Icons.verified : Icons.workspace_premium),
-                    title: Text(pro ? 'SiteStamp Pro' : 'Upgrade to SiteStamp Pro'),
-                    subtitle: Text(
+                    title: Tx(pro ? 'SiteStamp Pro' : 'Upgrade to SiteStamp Pro'),
+                    subtitle: Tx(
                       pro
                           ? 'No ads, no branding, company details, themes, '
                               'projects, Before/After and export.'
@@ -1407,20 +1618,20 @@ class _CameraScreenState extends State<CameraScreen>
                   ),
                   ListTile(
                     leading: const Icon(Icons.privacy_tip_outlined),
-                    title: const Text('Privacy policy'),
+                    title: const Tx('Privacy policy'),
                     trailing: const Icon(Icons.open_in_new, size: 18),
                     onTap: _openPrivacyPolicy,
                   ),
                   ListTile(
                     leading: const Icon(Icons.mail_outline),
-                    title: const Text('Contact support'),
+                    title: const Tx('Contact support'),
                     subtitle: const Text(kSupportEmail),
                     onTap: _emailSupport,
                   ),
                   if (kDebugMode)
                     SwitchListTile(
-                      title: const Text('Pro (testing only)'),
-                      subtitle: const Text('Only visible in debug builds.'),
+                      title: const Tx('Pro (testing only)'),
+                      subtitle: const Tx('Only visible in debug builds.'),
                       value: pro,
                       onChanged: (v) => widget.entitlements.setDebugPro(v),
                     ),
@@ -1438,7 +1649,7 @@ class _CameraScreenState extends State<CameraScreen>
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(_error!, textAlign: TextAlign.center),
+          child: Tx(_error!, textAlign: TextAlign.center),
         ),
       );
     }

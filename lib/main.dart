@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'screens/onboarding_screen.dart';
 import 'screens/permission_gate.dart';
 import 'services/ads_service.dart';
 import 'services/app_settings.dart';
@@ -60,12 +61,53 @@ class SiteStampApp extends StatelessWidget {
         colorSchemeSeed: const Color(0xFFFF8F00),
         useMaterial3: true,
       ),
-      home: PermissionGate(
+      home: _Root(
         settings: settings,
         entitlements: entitlements,
         billing: billing,
         library: library,
       ),
+    );
+  }
+}
+
+/// Shows the welcome screens once, then the normal app.
+class _Root extends StatefulWidget {
+  const _Root({
+    required this.settings,
+    required this.entitlements,
+    required this.billing,
+    required this.library,
+  });
+
+  final AppSettings settings;
+  final Entitlements entitlements;
+  final BillingService billing;
+  final PhotoLibrary library;
+
+  @override
+  State<_Root> createState() => _RootState();
+}
+
+class _RootState extends State<_Root> {
+  late bool _onboarded = widget.settings.onboardingDone;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_onboarded) {
+      return OnboardingScreen(
+        settings: widget.settings,
+        onDone: () async {
+          await widget.settings.setOnboardingDone();
+          if (mounted) setState(() => _onboarded = true);
+        },
+      );
+    }
+    return PermissionGate(
+      settings: widget.settings,
+      entitlements: widget.entitlements,
+      billing: widget.billing,
+      library: widget.library,
     );
   }
 }

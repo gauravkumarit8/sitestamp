@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_language.dart';
+import '../widgets/tx.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../config.dart';
@@ -18,7 +20,7 @@ class ProScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SiteStamp Pro')),
+      appBar: AppBar(title: const Tx('SiteStamp Pro')),
       body: SafeArea(
         child: AnimatedBuilder(
           animation: Listenable.merge([billing, entitlements]),
@@ -29,7 +31,7 @@ class ProScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.workspace_premium, size: 56),
                 const SizedBox(height: 12),
-                Text(
+                Tx(
                   owned ? 'You have SiteStamp Pro' : 'Upgrade to SiteStamp Pro',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall,
@@ -50,7 +52,7 @@ class ProScreen extends StatelessWidget {
                 if (billing.message != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: Text(
+                    child: Tx(
                       billing.message!,
                       textAlign: TextAlign.center,
                     ),
@@ -58,10 +60,10 @@ class ProScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: billing.restore,
-                  child: const Text('Restore purchases'),
+                  child: const Tx('Restore purchases'),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                const Tx(
                   'The yearly plan renews automatically each year until you '
                   'cancel it in Google Play. The lifetime option is a '
                   'one-time purchase. Payments are handled by Google Play.',
@@ -82,7 +84,7 @@ class ProScreen extends StatelessWidget {
         return const [Center(child: CircularProgressIndicator())];
       case BillingStatus.unavailable:
         return const [
-          Text(
+          Tx(
             'Purchases are not available right now. Install the app from '
             'Google Play and try again later.',
             textAlign: TextAlign.center,
@@ -105,7 +107,7 @@ class ProScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  Tx(
                     yearly ? 'Pro yearly' : 'Pro lifetime',
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
@@ -113,13 +115,17 @@ class ProScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(yearly ? '${p.price} per year' : '${p.price} one time'),
+                  Text(
+                    yearly
+                        ? '${p.price} ${tr('per year')}'
+                        : '${p.price} ${tr('one time')}',
+                  ),
                 ],
               ),
             ),
             FilledButton(
               onPressed: billing.busy ? null : () => billing.buy(p),
-              child: Text(yearly ? 'Subscribe' : 'Buy'),
+              child: Tx(yearly ? 'Subscribe' : 'Buy'),
             ),
           ],
         ),
@@ -140,7 +146,7 @@ class _Benefit extends StatelessWidget {
         children: [
           const Icon(Icons.check_circle, color: Color(0xFF43A047), size: 20),
           const SizedBox(width: 10),
-          Expanded(child: Text(text)),
+          Expanded(child: Tx(text)),
         ],
       ),
     );

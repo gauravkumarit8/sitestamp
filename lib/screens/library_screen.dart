@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../l10n/app_language.dart';
+import '../widgets/tx.dart';
 import 'package:gal/gal.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -96,7 +98,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(msg)));
+      ..showSnackBar(SnackBar(content: Tx(msg)));
   }
 
   Future<void> _shareSelected() async {
@@ -127,19 +129,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Remove ${items.length} photo${items.length == 1 ? '' : 's'}?'),
-        content: const Text(
+        title: Tx('Remove ${items.length} photo${items.length == 1 ? '' : 's'}?'),
+        content: const Tx(
           'They are removed from this list only. The copies in your phone '
           'gallery are not deleted.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Remove'),
+            child: const Tx('Remove'),
           ),
         ],
       ),
@@ -172,7 +174,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             const CircularProgressIndicator(),
             const SizedBox(width: 20),
             Expanded(
-              child: Text(
+              child: Tx(
                 kind == _ExportKind.pdf
                     ? 'Building PDF...'
                     : 'Building spreadsheet...',
@@ -216,8 +218,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final choice = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Export is a Pro feature'),
-        content: Text(
+        title: const Tx('Export is a Pro feature'),
+        content: Tx(
           adAvailable
               ? 'Watch a short ad to export once, or upgrade to Pro for '
                   'unlimited exports and no ads.'
@@ -226,16 +228,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop('cancel'),
-            child: const Text('Not now'),
+            child: const Tx('Not now'),
           ),
           if (adAvailable)
             TextButton(
               onPressed: () => Navigator.of(ctx).pop('ad'),
-              child: const Text('Watch ad'),
+              child: const Tx('Watch ad'),
             ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop('pro'),
-            child: const Text('Upgrade'),
+            child: const Tx('Upgrade'),
           ),
         ],
       ),
@@ -270,7 +272,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(width: 20),
-            Expanded(child: Text('Building Before / After...')),
+            Expanded(child: Tx('Building Before / After...')),
           ],
         ),
       ),
@@ -336,12 +338,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 onPressed: () => setState(_selected.clear),
               )
             : null,
-        title: Text(_selecting ? '${_selected.length} selected' : 'Photos'),
+        title: Tx(
+          _selecting ? '${_selected.length} ${tr('selected')}' : 'Photos',
+        ),
         actions: [
           if (_selecting) ...[
             IconButton(
               icon: const Icon(Icons.share),
-              tooltip: 'Share',
+              tooltip: tr('Share'),
               onPressed: _shareSelected,
             ),
             IconButton(
@@ -350,12 +354,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ? Icons.compare
                     : Icons.lock_outline,
               ),
-              tooltip: 'Before / After image',
+              tooltip: tr('Before / After image'),
               onPressed: _makeCollage,
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Remove from app',
+              tooltip: tr('Remove from app'),
               onPressed: _deleteSelected,
             ),
           ],
@@ -365,16 +369,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ? Icons.file_download_outlined
                   : Icons.lock_outline,
             ),
-            tooltip: 'Export',
+            tooltip: tr('Export'),
             onSelected: _export,
             itemBuilder: (_) => const [
               PopupMenuItem(
                 value: _ExportKind.pdf,
-                child: Text('PDF report'),
+                child: Tx('PDF report'),
               ),
               PopupMenuItem(
                 value: _ExportKind.csv,
-                child: Text('CSV spreadsheet'),
+                child: Tx('CSV spreadsheet'),
               ),
             ],
           ),
@@ -390,7 +394,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ? const Center(
                           child: Padding(
                             padding: EdgeInsets.all(24),
-                            child: Text(
+                            child: Tx(
                               'No photos here yet. Photos you take with '
                               'SiteStamp appear in this list.',
                               textAlign: TextAlign.center,
@@ -413,7 +417,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 if (!widget.entitlements.isPro)
                   const Padding(
                     padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
-                    child: Text(
+                    child: Tx(
                       'Free plan keeps your latest 50 photos in this list. '
                       'All photos stay in your phone gallery. Pro keeps '
                       'everything and adds PDF/CSV export.',
@@ -442,7 +446,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
         itemBuilder: (context, index) {
           final c = chips[index];
           return ChoiceChip(
-            label: Text(c.value),
+            label: Text(
+              (c.key == null || c.key == '') ? tr(c.value) : c.value,
+            ),
             selected: _filter == c.key,
             onSelected: (_) => setState(() {
               _filter = c.key;

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../l10n/app_language.dart';
 import '../models/checklist.dart';
 import '../models/site_location.dart';
 import '../models/stamp_style.dart';
@@ -19,6 +20,12 @@ class AppSettings extends ChangeNotifier {
   static const String _kStampPos = 'stamp_position';
   static const String _kStampSize = 'stamp_size';
   static const String _kLocationMode = 'location_mode';
+  static const String _kLanguage = 'language';
+  static const String _kOnboarded = 'onboarding_done';
+  static const String _kTimeFmt = 'fmt_time';
+  static const String _kCoordFmt = 'fmt_coords';
+  static const String _kAltUnit = 'fmt_altitude';
+  static const String _kPhotoSize = 'photo_size';
   static const String _kSites = 'project_sites';
   static const String _kChecklists = 'checklists';
   static const String _kActiveChecklist = 'active_checklist';
@@ -51,6 +58,9 @@ class AppSettings extends ChangeNotifier {
   String _activeChecklistId = '';
   Map<String, List<int>> _progress = <String, List<int>>{};
   String _company = '';
+  bool _onboardingDone = false;
+  StampFormat _format = const StampFormat();
+  PhotoSize _photoSize = PhotoSize.standard;
   String _reference = '';
   String _inspector = '';
 
@@ -62,6 +72,10 @@ class AppSettings extends ChangeNotifier {
   StampStyle get stampStyle => _style;
   StampLocationMode get locationMode => _locationMode;
   String get companyName => _company;
+  bool get onboardingDone => _onboardingDone;
+  StampFormat get stampFormat => _format;
+  PhotoSize get photoSize => _photoSize;
+  String get language => AppLanguage.instance.code;
   SiteLocation? siteFor(String project) => _sites[project];
 
   // ---- checklists ----
@@ -139,6 +153,16 @@ class AppSettings extends ChangeNotifier {
     } catch (_) {}
     s._activeChecklistId = prefs.getString(_kActiveChecklist) ?? '';
     s._company = prefs.getString(_kCompany) ?? '';
+    s._onboardingDone = prefs.getBool(_kOnboarded) ?? false;
+    AppLanguage.instance.set(prefs.getString(_kLanguage) ?? AppLanguage.detect());
+    int idx(String key, int count, int fallback) =>
+        (prefs.getInt(key) ?? fallback).clamp(0, count - 1).toInt();
+    s._format = StampFormat(
+      time: TimeFormat.values[idx(_kTimeFmt, TimeFormat.values.length, 0)],
+      coords: CoordFormat.values[idx(_kCoordFmt, CoordFormat.values.length, 0)],
+      altitude: AltitudeUnit.values[idx(_kAltUnit, AltitudeUnit.values.length, 0)],
+    );
+    s._photoSize = PhotoSize.values[idx(_kPhotoSize, PhotoSize.values.length, 1)];
     s._reference = prefs.getString(_kReference) ?? '';
     s._inspector = prefs.getString(_kInspector) ?? '';
     final theme = (prefs.getInt(_kStampTheme) ?? 0)
@@ -269,6 +293,32 @@ class AppSettings extends ChangeNotifier {
     _progress.remove(_progressKey(project));
     notifyListeners();
     await _saveProgress();
+  }
+
+  Future<void> setLanguage(String code) async {
+    AppLanguage.instance.set(code);
+    notifyListeners();
+    await _prefs.setString(_kLanguage, AppLanguage.instance.code);
+  }
+
+  Future<void> setOnboardingDone() async {
+    _onboardingDone = true;
+    notifyListeners();
+    await _prefs.setBool(_kOnboarded, true);
+  }
+
+  Future<void> setStampFormat(StampFormat f) async {
+    _format = f;
+    notifyListeners();
+    await _prefs.setInt(_kTimeFmt, f.time.index);
+    await _prefs.setInt(_kCoordFmt, f.coords.index);
+    await _prefs.setInt(_kAltUnit, f.altitude.index);
+  }
+
+  Future<void> setPhotoSize(PhotoSize p) async {
+    _photoSize = p;
+    notifyListeners();
+    await _prefs.setInt(_kPhotoSize, p.index);
   }
 
   Future<void> setStampTheme(StampTheme t) async {
