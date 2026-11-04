@@ -57,11 +57,18 @@ jobs:
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
 
+      - name: Read app version
+        id: ver
+        run: |
+          V=$(sed -n "s/.*kAppVersion = '\(.*\)';.*/\1/p" lib/config.dart)
+          echo "name=$V" >> "$GITHUB_OUTPUT"
+          echo "App version: $V"
+
       - name: Build signed App Bundle (upload this to Play Console)
-        run: flutter build appbundle --release --no-shrink --build-number=${{ github.run_number }}
+        run: flutter build appbundle --release --no-shrink --build-name=${{ steps.ver.outputs.name }} --build-number=${{ github.run_number }} --dart-define=APP_BUILD=${{ github.run_number }}
 
       - name: Build signed release APK (install on a phone to test R8/minify)
-        run: flutter build apk --release --no-shrink --build-number=${{ github.run_number }}
+        run: flutter build apk --release --no-shrink --build-name=${{ steps.ver.outputs.name }} --build-number=${{ github.run_number }} --dart-define=APP_BUILD=${{ github.run_number }}
 
       - name: Show signer certificate
         run: keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab | head -12

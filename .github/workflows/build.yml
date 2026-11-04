@@ -54,7 +54,7 @@ jobs:
 
       - name: Build debug APK (compiles Dart + Kotlin/Gradle)
         if: steps.check.outputs.ready == 'true'
-        run: flutter build apk --debug
+        run: flutter build apk --debug --dart-define=APP_BUILD=${{ github.run_number }}
 
       - name: Upload APK
         if: steps.check.outputs.ready == 'true'

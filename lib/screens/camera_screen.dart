@@ -22,6 +22,7 @@ import '../services/address_service.dart';
 import '../services/app_settings.dart';
 import '../services/billing_service.dart';
 import '../services/entitlements.dart';
+import '../services/feedback.dart';
 import '../services/location_service.dart';
 import '../services/photo_library.dart';
 import '../services/stamp_service.dart';
@@ -1301,13 +1302,31 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
-  Future<void> _emailSupport() async {
+  Future<void> _emailSupport({bool withDetails = false}) async {
+    final fix = _location.freshFix();
+    final gps = fix == null
+        ? 'no fresh fix'
+        : '±${fix.accuracy.round()} m'
+            '${_location.mockSeenRecently ? ', mock flagged' : ''}'
+            '${_location.clockMismatch ? ', clock mismatch' : ''}';
+    final body = withDetails
+        ? buildFeedbackBody(
+            androidVersion: Platform.operatingSystemVersion,
+            isPro: widget.entitlements.isPro,
+            language: AppLanguage.instance.code,
+            photoSize: widget.settings.photoSize.name,
+            gps: gps,
+            placeName: widget.settings.showAddress
+                ? widget.settings.locationMode.name
+                : 'off',
+          )
+        : '';
     try {
       final ok = await launchUrl(
-        Uri(
-          scheme: 'mailto',
-          path: kSupportEmail,
-          queryParameters: {'subject': 'SiteStamp support'},
+        feedbackUri(
+          to: kSupportEmail,
+          subject: withDetails ? 'SiteStamp feedback $kAppVersion' : 'SiteStamp support',
+          body: body,
         ),
       );
       if (!ok) _toast('No email app found. Write to $kSupportEmail');
@@ -1621,6 +1640,12 @@ class _CameraScreenState extends State<CameraScreen>
                     title: const Tx('Privacy policy'),
                     trailing: const Icon(Icons.open_in_new, size: 18),
                     onTap: _openPrivacyPolicy,
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.rate_review_outlined),
+                    title: const Tx('Send feedback'),
+                    subtitle: const Tx('Opens your email app with app details filled in.'),
+                    onTap: () => _emailSupport(withDetails: true),
                   ),
                   ListTile(
                     leading: const Icon(Icons.mail_outline),

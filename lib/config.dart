@@ -17,3 +17,9 @@ const bool kAdsEnabled = true;
 /// (see docs/ADS.md). The AdMob *app* id lives in AndroidManifest.xml.
 const String kAdMobBannerUnitId = 'ca-app-pub-3940256099942544/6300978111';
 const String kAdMobRewardedUnitId = 'ca-app-pub-3940256099942544/5224354917';
+
+/// ---- Version info (shown in feedback emails) ----
+/// Keep in step with docs/CHANGELOG.md. The release workflow also uses this as the
+/// Play "version name"; the build number comes from the CI run.
+const String kAppVersion = '1.3.1';
+const String kBuildNumber = String.fromEnvironment('APP_BUILD', defaultValue: 'dev');

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.1 - Feedback and version info
+- Settings > Send feedback: opens your email app with app version, build, Android version, plan, language, photo size and GPS state already filled in (no coordinates)
+- Email subject/body links now use %20 (no "+" showing in mail apps)
+- Version name now comes from kAppVersion in lib/config.dart; build number from the CI run (shown in feedback emails)
+- docs/TESTER_GUIDE.md (message for closed testers) and docs/PRODUCTION_ACCESS.md (answer templates)
+
 ## v1.3.0
 - Hindi interface (हिन्दी): switch in Settings or on the first screen; follows the phone language on first launch. The text printed on photos stays English by design
 - Stamp format options: 12 or 24-hour time, decimal or degrees-minutes-seconds coordinates, metres or feet

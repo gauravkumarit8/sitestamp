@@ -65,6 +65,8 @@ Phone model + Android version: ______________________
 | 51 | Photo size Small/Standard: photos save faster/smaller; Large asks for Pro on free | |
 | 52 | Timer 3 s and 10 s: countdown shows, photo is taken at 0; tapping the shutter during countdown cancels | |
 
+| 53 | Settings > Send feedback opens the email app; subject/body readable (no + signs); includes app version, build, Android, plan, GPS state; no coordinates | |
+
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a
 crash, also send the Build run link and, if you can, `adb logcat` output.

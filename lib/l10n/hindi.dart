@@ -162,4 +162,6 @@ const Map<String, String> kHindi = {
   'With Pro, projects, photo checklists and job-site checks keep photos organised and flag photos taken away from the site.': 'Pro में प्रोजेक्ट, फ़ोटो चेकलिस्ट और जॉब-साइट जाँच फ़ोटो को व्यवस्थित रखते हैं और साइट से दूर ली गई फ़ोटो पर निशान लगाते हैं।',
   'Share and report': 'शेयर करें और रिपोर्ट बनाएँ',
   'Send photos to WhatsApp with a map link, or export PDF and CSV reports of your work.': 'फ़ोटो को मैप लिंक के साथ WhatsApp पर भेजें, या अपने काम की PDF और CSV रिपोर्ट एक्सपोर्ट करें।',
+  'Send feedback': 'फ़ीडबैक भेजें',
+  'Opens your email app with app details filled in.': 'आपका ईमेल ऐप खुलेगा, ऐप की जानकारी पहले से भरी होगी।',
 };
