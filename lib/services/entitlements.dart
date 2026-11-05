@@ -45,6 +45,9 @@ class Entitlements extends ChangeNotifier {
   /// Photo checklists (steps per job, tagged on each photo).
   bool get canUseChecklists => isPro;
 
+  /// Draw arrows/circles/pen marks on a photo (saved as a separate copy).
+  bool get canAnnotate => isPro;
+
   /// Before/After comparison images.
   bool get canMakeCollage => isPro;
 

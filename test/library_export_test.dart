@@ -62,7 +62,7 @@ void main() {
     final lines = csv.trim().split('\r\n');
     expect(lines.length, 3);
     expect(lines.first.endsWith('mock_location,company,reference,inspector,'
-        'photo_id,sha256,clock_check,site_status,site_distance_m,checklist_step'), isTrue);
+        'photo_id,sha256,clock_check,site_status,site_distance_m,checklist_step,annotated'), isTrue);
     expect(lines[1], contains('2026-01-02 03:04:05'));
     expect(lines[1], contains('Tower A,1.500000,2.500000,10,5'));
     expect(lines[1], contains('"a,b"'));

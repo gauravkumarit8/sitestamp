@@ -7,12 +7,22 @@ import 'package:share_plus/share_plus.dart';
 import '../models/saved_photo.dart';
 
 class PhotoPreviewScreen extends StatelessWidget {
-  const PhotoPreviewScreen({super.key, required this.photo, this.onAllPhotos});
+  const PhotoPreviewScreen({
+    super.key,
+    required this.photo,
+    this.onAllPhotos,
+    this.onAnnotate,
+    this.annotateLocked = false,
+  });
 
   final SavedPhoto photo;
 
   /// When set, an "All photos" action opens the in-app photo list.
   final VoidCallback? onAllPhotos;
+
+  /// When set, an "Annotate" button opens the drawing screen for this photo.
+  final void Function(SavedPhoto photo)? onAnnotate;
+  final bool annotateLocked;
 
   Future<void> _share(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -78,13 +88,26 @@ class PhotoPreviewScreen extends StatelessWidget {
             top: false,
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _share(context),
-                  icon: const Icon(Icons.share),
-                  label: const Tx('Share'),
-                ),
+              child: Row(
+                children: [
+                  if (onAnnotate != null) ...[
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => onAnnotate!(photo),
+                        icon: Icon(annotateLocked ? Icons.lock_outline : Icons.draw_outlined),
+                        label: const Tx('Annotate'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _share(context),
+                      icon: const Icon(Icons.share),
+                      label: const Tx('Share'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

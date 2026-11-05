@@ -28,6 +28,7 @@ import '../services/photo_library.dart';
 import '../services/stamp_service.dart';
 import '../widgets/gps_status_pill.dart';
 import '../widgets/stamp_preview.dart';
+import 'annotate_screen.dart';
 import 'library_screen.dart';
 import 'photo_preview_screen.dart';
 import 'pro_screen.dart';
@@ -77,6 +78,8 @@ class _CameraScreenState extends State<CameraScreen>
   int _timerSeconds = 0; // self-timer: 0 (off), 3 or 10
   int? _countdown; // seconds left while counting down
   Timer? _countdownTimer;
+  String? _suggestedProject; // project whose job site we are standing in
+  String? _dismissedProject; // suggestion the user closed
 
   @override
   void initState() {
@@ -105,6 +108,58 @@ class _CameraScreenState extends State<CameraScreen>
     if (p != null && _addressEnabled) {
       _address.update(p); // background lookup, never blocks capture
     }
+    if (p != null) _checkSiteSuggestion(p);
+  }
+
+  void _checkSiteSuggestion(Position p) {
+    if (!mounted || !widget.entitlements.canUseProjects || p.accuracy > 75) return;
+    final match = suggestProject(
+      projects: widget.settings.projects,
+      siteFor: widget.settings.siteFor,
+      current: widget.settings.project,
+      lat: p.latitude,
+      lon: p.longitude,
+    );
+    if (match == null) {
+      if (_suggestedProject != null || _dismissedProject != null) {
+        setState(() {
+          _suggestedProject = null;
+          _dismissedProject = null;
+        });
+      }
+      return;
+    }
+    if (match == _dismissedProject || match == _suggestedProject) return;
+    setState(() => _suggestedProject = match);
+  }
+
+  void _acceptSuggestion() {
+    final name = _suggestedProject;
+    if (name == null) return;
+    widget.settings.selectProject(name);
+    setState(() {
+      _suggestedProject = null;
+      _selectedStep = null;
+    });
+  }
+
+  void _dismissSuggestion() {
+    setState(() {
+      _dismissedProject = _suggestedProject;
+      _suggestedProject = null;
+    });
+  }
+
+  void _annotatePhoto(SavedPhoto photo) {
+    if (!widget.entitlements.canAnnotate) {
+      _openProScreen();
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AnnotateScreen(photo: photo, library: widget.library),
+      ),
+    );
   }
 
   @override
@@ -563,6 +618,50 @@ class _CameraScreenState extends State<CameraScreen>
                           ),
                         ),
                       ),
+                    if (_suggestedProject != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.fromLTRB(12, 2, 4, 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xCC000000),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF43A047)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.place,
+                              size: 18,
+                              color: Color(0xFF43A047),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${tr('You are at a job site. Switch project?')}  '
+                                '$_suggestedProject',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _acceptSuggestion,
+                              child: const Tx('Switch'),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.white70,
+                              ),
+                              onPressed: _dismissSuggestion,
+                            ),
+                          ],
+                        ),
+                      ),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Wrap(
@@ -700,6 +799,8 @@ class _CameraScreenState extends State<CameraScreen>
           builder: (_) => PhotoPreviewScreen(
             photo: photo,
             onAllPhotos: _openLibrary,
+            onAnnotate: _annotatePhoto,
+            annotateLocked: !widget.entitlements.canAnnotate,
           ),
         ),
       ),

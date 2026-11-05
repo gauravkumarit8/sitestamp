@@ -67,6 +67,11 @@ Phone model + Android version: ______________________
 
 | 53 | Settings > Send feedback opens the email app; subject/body readable (no + signs); includes app version, build, Android, plan, GPS state; no coordinates | |
 
+| 54 | Pro: preview a photo > Annotate; draw arrow, circle, pen; undo/clear; Save copy | |
+| 55 | Annotated copy appears in the gallery and the photo list; the original is unchanged | |
+| 56 | Free: Annotate shows a lock and opens the Pro screen | |
+| 57 | Pro: with two projects that have sites, stand inside project B's radius while project A is active: banner offers to switch; Switch works; close (x) hides it | |
+
 ## How to report a problem
 Send: the row number, what you expected, what happened, and a screenshot. For a
 crash, also send the Build run link and, if you can, `adb logcat` output.

@@ -21,5 +21,5 @@ const String kAdMobRewardedUnitId = 'ca-app-pub-3940256099942544/5224354917';
 /// ---- Version info (shown in feedback emails) ----
 /// Keep in step with docs/CHANGELOG.md. The release workflow also uses this as the
 /// Play "version name"; the build number comes from the CI run.
-const String kAppVersion = '1.3.1';
+const String kAppVersion = '1.4.0';
 const String kBuildNumber = String.fromEnvironment('APP_BUILD', defaultValue: 'dev');

@@ -24,7 +24,7 @@ web checkout for seats. This is what companies actually pay for.
 - Hindi interface - M  (DONE in v1.3.0; other Indian languages: add a map like lib/l10n/hindi.dart)
 - Landscape + tablet support - S/M
 - Inspection checklists / templates - M  (DONE in v1.2.0, Pro)
-- Photo annotations (arrow, circle, text) - M
+- Photo annotations (arrow, circle, pen) - M  (DONE in v1.4.0, Pro; text labels later)
 - Attendance mode (selfie clock in/out, geofenced) - M
 
 ## P4 - Later

@@ -50,6 +50,7 @@ class ExportService {
       'site_status',
       'site_distance_m',
       'checklist_step',
+      'annotated',
     ];
     final rows = <String>[header.join(',')];
     for (final it in items) {
@@ -76,6 +77,7 @@ class ExportService {
           d.siteStatus,
           d.siteDistanceM?.round().toString() ?? '',
           d.step,
+          d.annotated ? 'yes' : 'no',
         ].map(csvEscape).join(','),
       );
     }
@@ -112,6 +114,7 @@ class ExportService {
       if (d.clockMismatch) 'Clock check: MISMATCH',
       if (d.memo.isNotEmpty) 'Note: ${_clip(d.memo, 120)}',
       if (d.photoId.isNotEmpty) 'ID: ${d.photoId}',
+      if (d.annotated) 'Annotated copy',
     ];
     return pdfSafe(lines.join('\n'));
   }

@@ -23,6 +23,7 @@ class StampData {
     this.siteRadiusM,
     this.step = '',
     this.format = const StampFormat(),
+    this.annotated = false,
   });
 
   final DateTime time;
@@ -45,6 +46,9 @@ class StampData {
   final double? siteRadiusM;
   final String step;
   final StampFormat format;
+
+  /// True for a copy that has arrows/circles/pen marks drawn on it.
+  final bool annotated;
 
   bool get hasFix => latitude != null && longitude != null;
 
@@ -82,6 +86,30 @@ class StampData {
     return 'SiteStamp_${t.year}${_two(t.month)}${_two(t.day)}_'
         '${_two(t.hour)}${_two(t.minute)}${_two(t.second)}.jpg';
   }
+
+  StampData markAnnotated() => StampData(
+        time: time,
+        memo: memo,
+        latitude: latitude,
+        longitude: longitude,
+        altitude: altitude,
+        accuracy: accuracy,
+        isMocked: isMocked,
+        address: address,
+        branding: branding,
+        project: project,
+        locationMode: locationMode,
+        company: company,
+        reference: reference,
+        inspector: inspector,
+        clockMismatch: clockMismatch,
+        photoId: photoId,
+        siteDistanceM: siteDistanceM,
+        siteRadiusM: siteRadiusM,
+        step: step,
+        format: format,
+        annotated: true,
+      );
 
   /// '' (no site set), 'on_site' or 'outside'.
   String get siteStatus {
@@ -148,6 +176,7 @@ class StampData {
         'siteDist': siteDistanceM,
         'siteRad': siteRadiusM,
         'step': step,
+        'annot': annotated,
       };
 
   factory StampData.fromJson(Map<String, dynamic> j) => StampData(
@@ -169,6 +198,7 @@ class StampData {
         siteDistanceM: (j['siteDist'] as num?)?.toDouble(),
         siteRadiusM: (j['siteRad'] as num?)?.toDouble(),
         step: (j['step'] as String?) ?? '',
+        annotated: (j['annot'] as bool?) ?? false,
       );
 
   List<String> toLines() {

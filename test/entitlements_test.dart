@@ -23,6 +23,7 @@ void main() {
     expect(e.canUseStampText, isFalse);
     expect(e.canMakeCollage, isFalse);
     expect(e.canUseChecklists, isFalse);
+    expect(e.canAnnotate, isFalse);
     expect(e.canUseGeofence, isFalse);
   });
 
@@ -42,6 +43,7 @@ void main() {
     expect(e.canUseStampText, isTrue);
     expect(e.canMakeCollage, isTrue);
     expect(e.canUseChecklists, isTrue);
+    expect(e.canAnnotate, isTrue);
     expect(e.canUseGeofence, isTrue);
   });
 

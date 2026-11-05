@@ -7,6 +7,7 @@ import 'package:gal/gal.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/library_item.dart';
+import '../models/saved_photo.dart';
 import '../models/stamp_data.dart';
 import '../services/ads_service.dart';
 import '../services/billing_service.dart';
@@ -15,6 +16,7 @@ import '../services/entitlements.dart';
 import '../services/export_service.dart';
 import '../services/photo_library.dart';
 import '../widgets/ad_banner.dart';
+import 'annotate_screen.dart';
 import 'photo_preview_screen.dart';
 import 'pro_screen.dart';
 
@@ -319,10 +321,26 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 
+  void _annotate(SavedPhoto photo) {
+    if (!widget.entitlements.canAnnotate) {
+      _openPro();
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AnnotateScreen(photo: photo, library: widget.library),
+      ),
+    );
+  }
+
   void _open(LibraryItem it) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => PhotoPreviewScreen(photo: it.toSavedPhoto()),
+        builder: (_) => PhotoPreviewScreen(
+          photo: it.toSavedPhoto(),
+          onAnnotate: _annotate,
+          annotateLocked: !widget.entitlements.canAnnotate,
+        ),
       ),
     );
   }

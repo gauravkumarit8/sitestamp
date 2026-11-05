@@ -41,3 +41,32 @@ class SiteLocation {
 
   bool contains(double lat2, double lon2) => distanceTo(lat2, lon2) <= radius;
 }
+
+/// The nearest project (other than [current]) whose job site contains the point,
+/// or null. Used to offer "You are at a job site. Switch project?".
+String? suggestProject({
+  required Iterable<String> projects,
+  required SiteLocation? Function(String name) siteFor,
+  required String current,
+  required double lat,
+  required double lon,
+}) {
+  // Already on a project whose own site contains you: nothing to suggest.
+  if (current.isNotEmpty) {
+    final own = siteFor(current);
+    if (own != null && own.contains(lat, lon)) return null;
+  }
+  String? best;
+  var bestDistance = double.infinity;
+  for (final name in projects) {
+    if (name == current) continue;
+    final site = siteFor(name);
+    if (site == null) continue;
+    final d = site.distanceTo(lat, lon);
+    if (d <= site.radius && d < bestDistance) {
+      best = name;
+      bestDistance = d;
+    }
+  }
+  return best;
+}

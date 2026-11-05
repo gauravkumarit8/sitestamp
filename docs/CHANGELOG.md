@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.4.0 - Annotations and site suggestions
+- Annotate photos (Pro): pen, arrow and circle in four colours, undo and clear. Saves a NEW copy (gallery + in-app list, marked "annotated"); the original is never changed and keeps its own fingerprint
+- Annotate button in the photo preview (from the camera thumbnail and the photo list)
+- Automatic project suggestion (Pro): when your GPS position is inside a project's job-site radius, the camera offers "You are at a job site. Switch project?"
+- CSV: annotated column; PDF captions mark annotated copies
+- No new packages
+
 ## v1.3.1 - Feedback and version info
 - Settings > Send feedback: opens your email app with app version, build, Android version, plan, language, photo size and GPS state already filled in (no coordinates)
 - Email subject/body links now use %20 (no "+" showing in mail apps)
